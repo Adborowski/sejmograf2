@@ -15,49 +15,51 @@ export default function MepCard({ mep }: MepCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden">
-      {/* Photo */}
-      <div className="relative h-48 bg-gray-200">
-        {!imageError ? (
-          <Image
-            src={photoUrl}
-            alt={mep.fullName}
-            fill
-            className="object-cover"
-            onError={() => setImageError(true)}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full bg-gray-300 text-gray-600">
-            <svg
-              className="w-20 h-20"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
       <div className="p-4">
-        {/* Name */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-          {mep.fullName}
-        </h3>
+        {/* Header with photo and name */}
+        <div className="flex items-start gap-4 mb-4">
+          {/* Small Photo */}
+          <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200">
+            {!imageError ? (
+              <Image
+                src={photoUrl}
+                alt={mep.fullName}
+                fill
+                className="object-cover"
+                onError={() => setImageError(true)}
+                sizes="64px"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full bg-gray-300 text-gray-600">
+                <svg
+                  className="w-8 h-8"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
 
-        {/* Club/Party */}
-        {mep.club && (
-          <p className="text-sm font-medium text-blue-600 mb-3">{mep.club}</p>
-        )}
+          {/* Name and Club */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">
+              {mep.fullName}
+            </h3>
+            {mep.club && (
+              <p className="text-sm font-medium text-blue-600 truncate">{mep.club}</p>
+            )}
+          </div>
+        </div>
 
         {/* Details */}
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-600 mb-4">
           {mep.districtName && (
             <div className="flex items-start">
               <svg
@@ -131,7 +133,7 @@ export default function MepCard({ mep }: MepCardProps) {
         </div>
 
         {/* Active Status */}
-        <div className="mt-4 pt-3 border-t border-gray-200">
+        <div className="pt-3 border-t border-gray-200">
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
               mep.active

@@ -8,62 +8,141 @@ console.log(
   `${colors.yellow}${colors.bold}==== SEJM-SCRAPER BASIC ====${colors.reset}`,
 );
 
-const getMepsAndSaveToFile = () => {
-  fetch("https://api.sejm.gov.pl/sejm/term10/MP", {
+const getMepsAndSaveToFile = async () => {
+  const res = await fetch("https://api.sejm.gov.pl/sejm/term10/MP", {
     method: "GET",
-  })
-    .then((res) => {
-      return res.json();
-    })
-    .then((x) => {
-      console.log(x);
-      fs.writeFileSync("poslowie.json", JSON.stringify(x));
-    });
+  });
+  const data = await res.json();
+  console.log(`${colors.green}✓ Fetched ${data.length} MEPs${colors.reset}`);
+  fs.writeFileSync("meps.json", JSON.stringify(data));
+  console.log(`${colors.green}✓ Saved to meps.json${colors.reset}\n`);
 };
 
-const saveMepPhoto = (mepId) => {
-  const destination = path.resolve("./img/", `${mepId}.jpeg`);
+const saveMepPhoto = async (mepId) => {
+  const destination = path.resolve("./scraping/img/", `${mepId}.jpeg`);
 
   // Check if file already exists
   if (fs.existsSync(destination)) {
-    console.log(
-      `${colors.dim}⏭  Skipping ${mepId} - already exists${colors.reset}`,
-    );
-    return;
+    return 'skipped';
   }
 
-  fetch(`https://api.sejm.gov.pl/sejm/term10/MP/${mepId}/photo-mini`, {
-    method: "GET",
-  }).then((res) => {
-    if (res.status === 404) {
-      console.log(`${colors.dim}⏭  Skipping ${mepId} - 404${colors.reset}`);
-      return;
-    }
-    console.log(`${colors.cyan}⬇  Downloading ${mepId}...${colors.reset}`);
-    const fileStream = fs.createWriteStream(destination, { flags: "w" });
-    finished(Readable.fromWeb(res.body).pipe(fileStream));
-    return;
-  });
-};
-
-const getMepPhotosAndSave = () => {
-  console.log("Getting MEP photos and saving to file...");
-  for (let i = 1; i <= 600; i++) {
-    saveMepPhoto(i);
-  }
-};
-
-const getVotes = () => {
-  fetch("https://api.sejm.gov.pl/sejm/term10/votings/4", {
-    method: "GET",
-  })
-    .then((res) => {
-      return res.json();
-    })
-    .then((x) => {
-      console.log(x);
-      // fs.writeFileSync("poslowie.json", JSON.stringify(x));
+  try {
+    const res = await fetch(`https://api.sejm.gov.pl/sejm/term10/MP/${mepId}/photo-mini`, {
+      method: "GET",
     });
+
+    if (res.status === 404) {
+      return 'not-found';
+    }
+
+    const fileStream = fs.createWriteStream(destination, { flags: "w" });
+    await finished(Readable.fromWeb(res.body).pipe(fileStream));
+    return 'downloaded';
+  } catch (error) {
+    // Handle fetch errors (network issues, etc.)
+    return 'error';
+  }
+};
+
+const getMepPhotosAndSave = async () => {
+  console.log(`${colors.cyan}Getting MEP photos...${colors.reset}`);
+
+  let skipped = 0;
+  let downloaded = 0;
+  let notFound = 0;
+  let errors = 0;
+
+  const promises = [];
+  for (let i = 1; i <= 600; i++) {
+    promises.push(saveMepPhoto(i));
+  }
+
+  const results = await Promise.all(promises);
+
+  results.forEach(result => {
+    if (result === 'skipped') skipped++;
+    else if (result === 'downloaded') downloaded++;
+    else if (result === 'not-found') notFound++;
+    else if (result === 'error') errors++;
+  });
+
+  console.log(`${colors.green}✓ Downloaded: ${downloaded}${colors.reset}`);
+  console.log(`${colors.yellow}⏭  Skipped (already exists): ${skipped}${colors.reset}`);
+  console.log(`${colors.dim}✗  Not found (404): ${notFound}${colors.reset}`);
+  if (errors > 0) {
+    console.log(`${colors.red}✗  Errors: ${errors}${colors.reset}`);
+  }
+  console.log('');
+};
+
+const saveMepPhotoBig = async (mepId) => {
+  const destination = path.resolve("./scraping/img/", `${mepId}-big.jpeg`);
+
+  // Check if file already exists
+  if (fs.existsSync(destination)) {
+    return 'skipped';
+  }
+
+  try {
+    const res = await fetch(`https://api.sejm.gov.pl/sejm/term10/MP/${mepId}/photo`, {
+      method: "GET",
+    });
+
+    if (res.status === 404) {
+      return 'not-found';
+    }
+
+    const fileStream = fs.createWriteStream(destination, { flags: "w" });
+    await finished(Readable.fromWeb(res.body).pipe(fileStream));
+    return 'downloaded';
+  } catch (error) {
+    // Handle fetch errors (network issues, etc.)
+    return 'error';
+  }
+};
+
+const getMepPhotosBigAndSave = async () => {
+  console.log(`${colors.cyan}Getting full-size MEP photos...${colors.reset}`);
+
+  let skipped = 0;
+  let downloaded = 0;
+  let notFound = 0;
+  let errors = 0;
+
+  const promises = [];
+  for (let i = 1; i <= 600; i++) {
+    promises.push(saveMepPhotoBig(i));
+  }
+
+  const results = await Promise.all(promises);
+
+  results.forEach(result => {
+    if (result === 'skipped') skipped++;
+    else if (result === 'downloaded') downloaded++;
+    else if (result === 'not-found') notFound++;
+    else if (result === 'error') errors++;
+  });
+
+  console.log(`${colors.green}✓ Downloaded: ${downloaded}${colors.reset}`);
+  console.log(`${colors.yellow}⏭  Skipped (already exists): ${skipped}${colors.reset}`);
+  console.log(`${colors.dim}✗  Not found (404): ${notFound}${colors.reset}`);
+  if (errors > 0) {
+    console.log(`${colors.red}✗  Errors: ${errors}${colors.reset}`);
+  }
+  console.log('');
 };
 
 console.log(colors.reset); // reset terminal coloring
+
+// Run functions sequentially
+(async () => {
+  try {
+    await getMepsAndSaveToFile();
+    await getMepPhotosAndSave();
+    await getMepPhotosBigAndSave();
+    console.log(`${colors.green}${colors.bold}✓ All done!${colors.reset}`);
+  } catch (error) {
+    console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
+    process.exit(1);
+  }
+})();

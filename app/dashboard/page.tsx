@@ -10,7 +10,7 @@ import { Mep } from "@/types/mep";
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const { meps, loading: mepsLoading, error: mepsError } = useMeps({ active: true });
+  const { meps, loading: mepsLoading, error: mepsError } = useMeps();
   const { clubs, loading: clubsLoading } = useClubs();
 
   const handleSignOut = async () => {

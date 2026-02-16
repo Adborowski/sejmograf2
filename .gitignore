@@ -48,3 +48,5 @@ firestore-debug.log
 # scraping data (generated, not source code)
 scraping/img/
 scraping/*.json
+
+.service-account-keys/

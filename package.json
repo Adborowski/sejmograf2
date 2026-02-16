@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "update-mep-data": "node scripts/updateMepData.js"
   },
   "dependencies": {
     "firebase": "^12.9.0",
