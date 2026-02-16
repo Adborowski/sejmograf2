@@ -1,6 +1,8 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getDatabase, Database } from 'firebase/database';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 // Firebase configuration object from environment variables
 const firebaseConfig = {
@@ -17,15 +19,22 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let auth: Auth;
 let database: Database;
+let firestore: Firestore;
+let storage: FirebaseStorage;
 
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   database = getDatabase(app);
+  // Use the "sejmograf-db" database in Europe
+  firestore = getFirestore(app, 'sejmograf-db');
+  storage = getStorage(app);
 } else {
   app = getApps()[0];
   auth = getAuth(app);
   database = getDatabase(app);
+  firestore = getFirestore(app, 'sejmograf-db');
+  storage = getStorage(app);
 }
 
-export { app, auth, database };
+export { app, auth, database, firestore, storage };

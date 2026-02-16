@@ -80,7 +80,7 @@ export const LoginForm: React.FC = () => {
               htmlFor="password"
               className="text-neutral-950 block text-sm font-medium mb-2"
             >
-              Password
+              Hasło
             </label>
             <input
               id="password"
@@ -111,8 +111,8 @@ export const LoginForm: React.FC = () => {
             <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">
-              bądź kontynuuj z
+            <span className="px-2 bg-gray-50 text-gray-500">
+              albo kontynuuj z
             </span>
           </div>
         </div>
