@@ -45,11 +45,6 @@ const steps = [
     script: "scripts/uploadToFirestore.js",
     description: "Uploading MEP data to Firestore",
   },
-  {
-    name: "Upload photos to Storage",
-    script: "scripts/uploadToStorage.js",
-    description: "Uploading MEP photos to Firebase Storage",
-  },
 ];
 
 let currentStep = 0;

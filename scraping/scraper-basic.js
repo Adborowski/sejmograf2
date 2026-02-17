@@ -137,11 +137,11 @@ const getMepPhotosBigAndSave = async () => {
 console.log(colors.reset); // reset terminal coloring
 
 // Run functions sequentially
+// Photo functions (getMepPhotosAndSave, getMepPhotosBigAndSave) are defined above
+// but excluded from the automated pipeline — run them manually when needed.
 (async () => {
   try {
     await getMepsAndSaveToFile();
-    await getMepPhotosAndSave();
-    await getMepPhotosBigAndSave();
     console.log(`${colors.green}${colors.bold}✓ All done!${colors.reset}`);
   } catch (error) {
     console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
