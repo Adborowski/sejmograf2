@@ -50,3 +50,4 @@ scraping/img/
 scraping/*.json
 
 .service-account-keys/
+secrets/
