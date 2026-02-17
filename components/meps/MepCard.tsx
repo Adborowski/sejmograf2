@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Mep } from '@/types/mep';
-import { getMepPhotoDirectURL } from '@/lib/firebase/storage';
+import { getMepPhotoBigDirectURL } from '@/lib/firebase/storage';
 
 interface MepCardProps {
   mep: Mep;
@@ -11,7 +12,7 @@ interface MepCardProps {
 
 export default function MepCard({ mep }: MepCardProps) {
   const [imageError, setImageError] = useState(false);
-  const photoUrl = getMepPhotoDirectURL(mep.id);
+  const photoUrl = getMepPhotoBigDirectURL(mep.id);
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden">
@@ -132,8 +133,8 @@ export default function MepCard({ mep }: MepCardProps) {
           )}
         </div>
 
-        {/* Active Status */}
-        <div className="pt-3 border-t border-gray-200">
+        {/* Active Status + Stats Link */}
+        <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
               mep.active
@@ -143,6 +144,12 @@ export default function MepCard({ mep }: MepCardProps) {
           >
             {mep.active ? 'Active' : 'Inactive'}
           </span>
+          <Link
+            href={`/mep/${mep.id}`}
+            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+          >
+            Show stats →
+          </Link>
         </div>
       </div>
     </div>

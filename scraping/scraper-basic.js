@@ -14,12 +14,12 @@ const getMepsAndSaveToFile = async () => {
   });
   const data = await res.json();
   console.log(`${colors.green}✓ Fetched ${data.length} MEPs${colors.reset}`);
-  fs.writeFileSync("meps.json", JSON.stringify(data));
+  fs.writeFileSync(path.resolve(__dirname, "meps.json"), JSON.stringify(data));
   console.log(`${colors.green}✓ Saved to meps.json${colors.reset}\n`);
 };
 
 const saveMepPhoto = async (mepId) => {
-  const destination = path.resolve("./scraping/img/", `${mepId}.jpeg`);
+  const destination = path.resolve(__dirname, "img", `${mepId}.jpeg`);
 
   // Check if file already exists
   if (fs.existsSync(destination)) {
@@ -45,6 +45,7 @@ const saveMepPhoto = async (mepId) => {
 };
 
 const getMepPhotosAndSave = async () => {
+  fs.mkdirSync(path.resolve(__dirname, "img"), { recursive: true });
   console.log(`${colors.cyan}Getting MEP photos...${colors.reset}`);
 
   let skipped = 0;
@@ -76,7 +77,7 @@ const getMepPhotosAndSave = async () => {
 };
 
 const saveMepPhotoBig = async (mepId) => {
-  const destination = path.resolve("./scraping/img/", `${mepId}-big.jpeg`);
+  const destination = path.resolve(__dirname, "img", `${mepId}-big.jpeg`);
 
   // Check if file already exists
   if (fs.existsSync(destination)) {
@@ -102,6 +103,7 @@ const saveMepPhotoBig = async (mepId) => {
 };
 
 const getMepPhotosBigAndSave = async () => {
+  fs.mkdirSync(path.resolve(__dirname, "img"), { recursive: true });
   console.log(`${colors.cyan}Getting full-size MEP photos...${colors.reset}`);
 
   let skipped = 0;

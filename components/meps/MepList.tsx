@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Mep } from '@/types/mep';
 import MepCard from './MepCard';
 import MepFilters from './MepFilters';
@@ -52,24 +52,23 @@ export default function MepList({ meps, clubs }: MepListProps) {
   const currentMeps = filteredMeps.slice(startIndex, endIndex);
 
   // Reset to page 1 when filters change
-  const handleSearchChange = (search: string) => {
+  const handleSearchChange = useCallback((search: string) => {
     setSearchQuery(search);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleClubChange = (club: string) => {
+  const handleClubChange = useCallback((club: string) => {
     setSelectedClub(club);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleActiveChange = (active: boolean | null) => {
+  const handleActiveChange = useCallback((active: boolean | null) => {
     setActiveFilter(active);
     setCurrentPage(1);
-  };
+  }, []);
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Generate page numbers for pagination
@@ -123,15 +122,9 @@ export default function MepList({ meps, clubs }: MepListProps) {
       {/* MEP Grid */}
       {currentMeps.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {currentMeps.map((mep) => (
-              <MepCard key={mep.id} mep={mep} />
-            ))}
-          </div>
-
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
+            <div className="flex items-center justify-center gap-2 mb-6">
               {/* Previous Button */}
               <button
                 onClick={() => goToPage(currentPage - 1)}
@@ -180,6 +173,12 @@ export default function MepList({ meps, clubs }: MepListProps) {
               </button>
             </div>
           )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {currentMeps.map((mep) => (
+              <MepCard key={mep.id} mep={mep} />
+            ))}
+          </div>
         </>
       ) : (
         // No results

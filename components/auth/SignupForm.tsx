@@ -71,7 +71,7 @@ export const SignupForm: React.FC = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="text-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="ty@przykład.pl"
             />
           </div>
@@ -91,7 +91,7 @@ export const SignupForm: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="text-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
             />
             <p className="mt-1 text-xs text-gray-500">Przynajmniej 6 znaków</p>
@@ -112,7 +112,7 @@ export const SignupForm: React.FC = () => {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="text-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
             />
           </div>

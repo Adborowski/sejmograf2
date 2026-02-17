@@ -30,6 +30,34 @@ export const getMepPhotoDirectURL = (mepId: number): string => {
 };
 
 /**
+ * Get the download URL for a MEP's full-size profile photo
+ * @param mepId - The MEP's ID
+ * @returns Promise with the download URL
+ */
+export const getMepPhotoBigURL = async (mepId: number): Promise<string> => {
+  try {
+    const photoRef = ref(storage, `meps/${mepId}-big.jpeg`);
+    const url = await getDownloadURL(photoRef);
+    return url;
+  } catch (error: any) {
+    // If photo doesn't exist, return a placeholder
+    console.warn(`Big photo not found for MEP ${mepId}`);
+    return '/img/placeholder-avatar.png';
+  }
+};
+
+/**
+ * Get a direct storage URL for full-size photo (faster, but requires public read access)
+ * Use this if your storage rules allow public read
+ * @param mepId - The MEP's ID
+ * @returns The direct storage URL
+ */
+export const getMepPhotoBigDirectURL = (mepId: number): string => {
+  const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/meps%2F${mepId}-big.jpeg?alt=media`;
+};
+
+/**
  * Preload multiple MEP photos for better performance
  * @param mepIds - Array of MEP IDs
  * @returns Promise with a map of MEP ID to photo URL
