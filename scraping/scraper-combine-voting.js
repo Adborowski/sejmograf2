@@ -46,35 +46,31 @@ const combineVotingData = async () => {
   let successCount = 0;
   let errorCount = 0;
 
+  const PROGRESS_INTERVAL = 50;
+
   // Process each MEP
   for (let i = 0; i < mepsData.length; i++) {
     const mep = mepsData[i];
-    const progress = `[${i + 1}/${mepsData.length}]`;
-
-    process.stdout.write(
-      `${colors.cyan}${progress} Fetching voting stats for ${mep.firstName} ${mep.lastName} (ID: ${mep.id})...${colors.reset}`,
-    );
 
     // Fetch voting stats
     const votingStats = await getMepVotingStats(mep.id);
 
     if (votingStats) {
-      // Combine data
-      const combinedMep = {
-        ...mep,
-        votingStats: votingStats,
-      };
-      combinedData.push(combinedMep);
+      combinedData.push({ ...mep, votingStats });
       successCount++;
-      process.stdout.write(` ${colors.green}✓${colors.reset}\n`);
     } else {
-      // Add MEP without voting stats
-      combinedData.push({
-        ...mep,
-        votingStats: null,
-      });
+      combinedData.push({ ...mep, votingStats: null });
       errorCount++;
-      process.stdout.write(` ${colors.red}✗${colors.reset}\n`);
+    }
+
+    // Log progress every PROGRESS_INTERVAL MEPs and at the end
+    if ((i + 1) % PROGRESS_INTERVAL === 0 || i === mepsData.length - 1) {
+      console.log(
+        `${colors.cyan}Progress: ${i + 1}/${mepsData.length} ` +
+        `(✓ ${successCount}` +
+        (errorCount > 0 ? ` ✗ ${errorCount}` : '') +
+        `)${colors.reset}`
+      );
     }
 
     // Add delay between requests to avoid rate limiting (100ms)
@@ -105,5 +101,3 @@ combineVotingData().catch((error) => {
   );
   process.exit(1);
 });
-
-getMepVotingStats();

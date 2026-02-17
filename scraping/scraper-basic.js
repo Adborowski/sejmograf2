@@ -44,6 +44,10 @@ const saveMepPhoto = async (mepId) => {
   }
 };
 
+const BATCH_SIZE = 10;
+const BATCH_DELAY_MS = 300;
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const getMepPhotosAndSave = async () => {
   fs.mkdirSync(path.resolve(__dirname, "img"), { recursive: true });
   console.log(`${colors.cyan}Getting MEP photos...${colors.reset}`);
@@ -53,19 +57,18 @@ const getMepPhotosAndSave = async () => {
   let notFound = 0;
   let errors = 0;
 
-  const promises = [];
-  for (let i = 1; i <= 600; i++) {
-    promises.push(saveMepPhoto(i));
+  const ids = Array.from({ length: 600 }, (_, i) => i + 1);
+  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+    const batch = ids.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(batch.map(saveMepPhoto));
+    results.forEach(result => {
+      if (result === 'skipped') skipped++;
+      else if (result === 'downloaded') downloaded++;
+      else if (result === 'not-found') notFound++;
+      else if (result === 'error') errors++;
+    });
+    if (i + BATCH_SIZE < ids.length) await delay(BATCH_DELAY_MS);
   }
-
-  const results = await Promise.all(promises);
-
-  results.forEach(result => {
-    if (result === 'skipped') skipped++;
-    else if (result === 'downloaded') downloaded++;
-    else if (result === 'not-found') notFound++;
-    else if (result === 'error') errors++;
-  });
 
   console.log(`${colors.green}✓ Downloaded: ${downloaded}${colors.reset}`);
   console.log(`${colors.yellow}⏭  Skipped (already exists): ${skipped}${colors.reset}`);
@@ -111,19 +114,18 @@ const getMepPhotosBigAndSave = async () => {
   let notFound = 0;
   let errors = 0;
 
-  const promises = [];
-  for (let i = 1; i <= 600; i++) {
-    promises.push(saveMepPhotoBig(i));
+  const ids = Array.from({ length: 600 }, (_, i) => i + 1);
+  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+    const batch = ids.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(batch.map(saveMepPhotoBig));
+    results.forEach(result => {
+      if (result === 'skipped') skipped++;
+      else if (result === 'downloaded') downloaded++;
+      else if (result === 'not-found') notFound++;
+      else if (result === 'error') errors++;
+    });
+    if (i + BATCH_SIZE < ids.length) await delay(BATCH_DELAY_MS);
   }
-
-  const results = await Promise.all(promises);
-
-  results.forEach(result => {
-    if (result === 'skipped') skipped++;
-    else if (result === 'downloaded') downloaded++;
-    else if (result === 'not-found') notFound++;
-    else if (result === 'error') errors++;
-  });
 
   console.log(`${colors.green}✓ Downloaded: ${downloaded}${colors.reset}`);
   console.log(`${colors.yellow}⏭  Skipped (already exists): ${skipped}${colors.reset}`);
