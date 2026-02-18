@@ -3,10 +3,37 @@ const fs = require("fs");
 const path = require("path");
 const { Readable } = require("stream");
 const { finished } = require("stream/promises");
+const admin = require("firebase-admin");
 
 console.log(
   `${colors.yellow}${colors.bold}==== SEJM-SCRAPER BASIC ====${colors.reset}`,
 );
+
+// Initialize Firebase Admin to check which photos are already in Storage
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+  projectId: "sejmograf-91428",
+  storageBucket: "sejmograf-91428.firebasestorage.app",
+});
+const bucket = admin.storage().bucket();
+
+// Returns Sets of IDs already uploaded: { miniIds: Set<number>, bigIds: Set<number> }
+const getUploadedPhotoIds = async () => {
+  console.log(`${colors.cyan}Checking Firebase Storage for existing photos...${colors.reset}`);
+  const [files] = await bucket.getFiles({ prefix: "meps/" });
+  const miniIds = new Set();
+  const bigIds = new Set();
+  for (const file of files) {
+    const bigMatch = file.name.match(/^meps\/(\d+)-big\.jpeg$/);
+    const miniMatch = file.name.match(/^meps\/(\d+)\.jpeg$/);
+    if (bigMatch) bigIds.add(parseInt(bigMatch[1]));
+    else if (miniMatch) miniIds.add(parseInt(miniMatch[1]));
+  }
+  console.log(
+    `${colors.green}✓ Found ${miniIds.size} mini and ${bigIds.size} big photos already in Storage${colors.reset}\n`,
+  );
+  return { miniIds, bigIds };
+};
 
 const getMepsAndSaveToFile = async () => {
   const res = await fetch("https://api.sejm.gov.pl/sejm/term10/MP", {
@@ -18,11 +45,11 @@ const getMepsAndSaveToFile = async () => {
   console.log(`${colors.green}✓ Saved to meps.json${colors.reset}\n`);
 };
 
-const saveMepPhoto = async (mepId) => {
+const saveMepPhoto = async (mepId, uploadedMiniIds) => {
   const destination = path.resolve(__dirname, "img", `${mepId}.jpeg`);
 
-  // Check if file already exists
-  if (fs.existsSync(destination)) {
+  // Skip if already in Firebase Storage or on local disk
+  if (uploadedMiniIds.has(mepId) || fs.existsSync(destination)) {
     return 'skipped';
   }
 
@@ -48,7 +75,7 @@ const BATCH_SIZE = 10;
 const BATCH_DELAY_MS = 300;
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const getMepPhotosAndSave = async () => {
+const getMepPhotosAndSave = async (uploadedMiniIds) => {
   fs.mkdirSync(path.resolve(__dirname, "img"), { recursive: true });
   console.log(`${colors.cyan}Getting MEP photos...${colors.reset}`);
 
@@ -60,7 +87,7 @@ const getMepPhotosAndSave = async () => {
   const ids = Array.from({ length: 600 }, (_, i) => i + 1);
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
     const batch = ids.slice(i, i + BATCH_SIZE);
-    const results = await Promise.all(batch.map(saveMepPhoto));
+    const results = await Promise.all(batch.map((id) => saveMepPhoto(id, uploadedMiniIds)));
     results.forEach(result => {
       if (result === 'skipped') skipped++;
       else if (result === 'downloaded') downloaded++;
@@ -79,11 +106,11 @@ const getMepPhotosAndSave = async () => {
   console.log('');
 };
 
-const saveMepPhotoBig = async (mepId) => {
+const saveMepPhotoBig = async (mepId, uploadedBigIds) => {
   const destination = path.resolve(__dirname, "img", `${mepId}-big.jpeg`);
 
-  // Check if file already exists
-  if (fs.existsSync(destination)) {
+  // Skip if already in Firebase Storage or on local disk
+  if (uploadedBigIds.has(mepId) || fs.existsSync(destination)) {
     return 'skipped';
   }
 
@@ -105,7 +132,7 @@ const saveMepPhotoBig = async (mepId) => {
   }
 };
 
-const getMepPhotosBigAndSave = async () => {
+const getMepPhotosBigAndSave = async (uploadedBigIds) => {
   fs.mkdirSync(path.resolve(__dirname, "img"), { recursive: true });
   console.log(`${colors.cyan}Getting full-size MEP photos...${colors.reset}`);
 
@@ -117,7 +144,7 @@ const getMepPhotosBigAndSave = async () => {
   const ids = Array.from({ length: 600 }, (_, i) => i + 1);
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
     const batch = ids.slice(i, i + BATCH_SIZE);
-    const results = await Promise.all(batch.map(saveMepPhotoBig));
+    const results = await Promise.all(batch.map((id) => saveMepPhotoBig(id, uploadedBigIds)));
     results.forEach(result => {
       if (result === 'skipped') skipped++;
       else if (result === 'downloaded') downloaded++;
@@ -142,8 +169,9 @@ console.log(colors.reset); // reset terminal coloring
 (async () => {
   try {
     await getMepsAndSaveToFile();
-    await getMepPhotosAndSave();
-    await getMepPhotosBigAndSave();
+    const { miniIds, bigIds } = await getUploadedPhotoIds();
+    await getMepPhotosAndSave(miniIds);
+    await getMepPhotosBigAndSave(bigIds);
     console.log(`${colors.green}${colors.bold}✓ All done!${colors.reset}`);
   } catch (error) {
     console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
