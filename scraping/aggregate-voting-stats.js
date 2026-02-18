@@ -105,9 +105,26 @@ const aggregateFile = () => {
       );
     }
 
+    // Pre-compute totals across all sittings
+    let totalVoted = 0;
+    let totalMissed = 0;
+    let totalVotings = 0;
+    if (aggregated && typeof aggregated === "object") {
+      Object.values(aggregated).forEach((stat) => {
+        totalVoted += stat.numVoted || 0;
+        totalMissed += stat.numMissed || 0;
+        totalVotings += stat.numVotings || 0;
+      });
+    }
+    const attendanceRate = totalVotings > 0 ? totalVoted / totalVotings : null;
+
     return {
       ...mep,
       votingStats: aggregated,
+      totalVoted,
+      totalMissed,
+      totalVotings,
+      attendanceRate,
     };
   });
 
@@ -145,4 +162,3 @@ try {
   );
   process.exit(1);
 }
-aggregateVotingStats();

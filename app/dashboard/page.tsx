@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,12 @@ export default function DashboardPage() {
                 <p className="text-xs text-gray-500">Polish Parliament Monitor</p>
               </div>
               <div className="flex items-center gap-4">
+                <Link
+                  href="/leaderboard"
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                >
+                  Leaderboard
+                </Link>
                 <span className="text-sm text-gray-600">{user?.email}</span>
                 <button
                   onClick={handleSignOut}

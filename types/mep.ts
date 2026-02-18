@@ -40,6 +40,12 @@ export interface Mep {
   // Voting stats (keyed by sitting number)
   votingStats?: Record<number, VotingStat>;
 
+  // Pre-computed attendance totals
+  totalVoted?: number;
+  totalMissed?: number;
+  totalVotings?: number;
+  attendanceRate?: number | null; // 0-1 range, null if no data
+
   // Metadata
   updatedAt?: any; // Firestore Timestamp
 }

@@ -117,6 +117,12 @@ async function uploadMepData() {
         // Voting stats
         votingStats: mep.votingStats || [],
 
+        // Pre-computed attendance totals (for leaderboard queries)
+        totalVoted: mep.totalVoted ?? null,
+        totalMissed: mep.totalMissed ?? null,
+        totalVotings: mep.totalVotings ?? null,
+        attendanceRate: mep.attendanceRate ?? null,
+
         // Metadata
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
