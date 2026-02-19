@@ -7,6 +7,7 @@ import { getMepPhotoDirectURL } from '@/lib/firebase/storage';
 import { AttendanceChart } from '@/components/leaderboard/AttendanceChart';
 import { ClubCards } from '@/components/leaderboard/ClubCards';
 import { BiggestMovers } from '@/components/dashboard/BiggestMovers';
+import { useLatestSittingDate } from '@/hooks/useLatestSittingDate';
 
 const LEADERBOARD_SIZE = 20;
 
@@ -79,6 +80,7 @@ function RankRow({
 
 export default function LeaderboardPage() {
   const { meps, loading, error } = useMeps();
+  const { sitting, date } = useLatestSittingDate();
 
   const activeSorted = [...meps]
     .filter((m) => m.active && m.attendanceRate !== null && m.attendanceRate !== undefined)
@@ -124,6 +126,11 @@ export default function LeaderboardPage() {
           <p className="text-blue-100 text-base leading-relaxed max-w-2xl">
             Sejmograf śledzi obecność wszystkich posłów na głosowaniach sejmowych. Sprawdź, kto pojawia się regularnie, a kto opuszcza posiedzenia — i wyraź swoją opinię.
           </p>
+          {date && sitting && (
+            <p className="mt-4 text-xs text-blue-200">
+              Dane aktualne do posiedzenia nr {sitting} ({date})
+            </p>
+          )}
         </div>
 
         {/* Biggest movers — loads independently */}
