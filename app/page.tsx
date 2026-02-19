@@ -118,6 +118,14 @@ export default function LeaderboardPage() {
       </nav>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Hero */}
+        <div className="bg-blue-600 text-white rounded-xl shadow-lg px-8 py-7 mb-8">
+          <h2 className="text-2xl font-bold mb-2">Czy Twój poseł chodzi na głosowania?</h2>
+          <p className="text-blue-100 text-base leading-relaxed max-w-2xl">
+            Sejmograf śledzi obecność wszystkich posłów na głosowaniach sejmowych. Sprawdź, kto pojawia się regularnie, a kto opuszcza posiedzenia — i wyraź swoją opinię.
+          </p>
+        </div>
+
         {/* Biggest movers — loads independently */}
         <BiggestMovers />
 
