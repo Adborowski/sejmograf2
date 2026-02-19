@@ -7,6 +7,7 @@ import { getMepPhotoDirectURL } from '@/lib/firebase/storage';
 import { AttendanceChart } from '@/components/leaderboard/AttendanceChart';
 import { ClubCards } from '@/components/leaderboard/ClubCards';
 import { BiggestMovers } from '@/components/dashboard/BiggestMovers';
+import { RecentReviews } from '@/components/dashboard/RecentReviews';
 import { useLatestSittingDate } from '@/hooks/useLatestSittingDate';
 
 const LEADERBOARD_SIZE = 20;
@@ -99,6 +100,9 @@ export default function LeaderboardPage() {
     rankMap.set(activeSorted[i].id, currentRank);
   }
 
+  const mepNameMap = new Map(meps.map((m: any) => [m.id, m.fullName as string]));
+  const getMepName = (id: number) => mepNameMap.get(id) ?? null;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -135,6 +139,8 @@ export default function LeaderboardPage() {
 
         {/* Biggest movers — loads independently */}
         <BiggestMovers />
+
+        <RecentReviews getMepName={getMepName} />
 
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Ranking Obecności</h2>

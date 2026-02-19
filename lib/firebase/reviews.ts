@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, deleteDoc, getDocs, getDoc } from 'firebase/firestore';
+import { collection, collectionGroup, doc, setDoc, deleteDoc, getDocs, getDoc, query, orderBy, limit } from 'firebase/firestore';
 import { firestore } from './config';
 
 const db = firestore;
@@ -59,4 +59,21 @@ export const deleteReview = async (
   userId: string
 ): Promise<void> => {
   await deleteDoc(reviewDoc(mepId, userId));
+};
+
+export interface RecentReview extends Review {
+  mepId: number;
+}
+
+export const getRecentReviews = async (count = 5): Promise<RecentReview[]> => {
+  const q = query(
+    collectionGroup(db, 'reviews'),
+    orderBy('updatedAt', 'desc'),
+    limit(count),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({
+    ...(d.data() as Review),
+    mepId: parseInt(d.ref.parent.parent!.id, 10),
+  }));
 };
