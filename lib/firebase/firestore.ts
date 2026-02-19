@@ -9,6 +9,7 @@ import {
   limit,
   QueryConstraint,
 } from 'firebase/firestore';
+import { LeaderboardSnapshot, LeaderboardSnapshotMeta } from '@/types/mep';
 import { firestore } from './config';
 
 // Get Firestore instance
@@ -105,6 +106,75 @@ export const getAllClubs = async () => {
     return Array.from(clubs).sort();
   } catch (error: any) {
     throw new Error(error.message || 'Failed to fetch clubs');
+  }
+};
+
+/**
+ * Get the most recent leaderboard snapshot (full, including rankings)
+ */
+export const getLatestLeaderboardSnapshot = async (): Promise<LeaderboardSnapshot | null> => {
+  try {
+    const q = query(
+      collection(db, 'leaderboard_snapshots'),
+      where('sitting', '>', 0), // exclude the 'index' meta document
+      orderBy('sitting', 'desc'),
+      limit(1),
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    return snap.docs[0].data() as LeaderboardSnapshot;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch latest leaderboard snapshot');
+  }
+};
+
+/**
+ * Get a specific leaderboard snapshot by sitting number (full, including rankings)
+ */
+export const getLeaderboardSnapshotBySitting = async (sitting: number): Promise<LeaderboardSnapshot | null> => {
+  try {
+    const docRef = doc(db, 'leaderboard_snapshots', String(sitting));
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+    return docSnap.data() as LeaderboardSnapshot;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch leaderboard snapshot');
+  }
+};
+
+/**
+ * Get lightweight metadata for all snapshots (no rankings) for navigation/listing.
+ * Reads from the 'index' document written by saveLeaderboardSnapshot.js.
+ */
+export const getAllLeaderboardSnapshotMeta = async (): Promise<LeaderboardSnapshotMeta[]> => {
+  try {
+    const docRef = doc(db, 'leaderboard_snapshots', 'index');
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return [];
+    const snapshots: LeaderboardSnapshotMeta[] = docSnap.data().snapshots ?? [];
+    return snapshots.slice().sort((a, b) => b.sitting - a.sitting); // newest first
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch leaderboard snapshot list');
+  }
+};
+
+/**
+ * Get the two most recent leaderboard snapshots (full, with rankings).
+ * Returns [latest, previous] — either may be null if not enough snapshots exist.
+ */
+export const getTwoLatestLeaderboardSnapshots = async (): Promise<[LeaderboardSnapshot | null, LeaderboardSnapshot | null]> => {
+  try {
+    const meta = await getAllLeaderboardSnapshotMeta(); // newest first
+    if (meta.length === 0) return [null, null];
+
+    const [latestMeta, previousMeta] = meta;
+    const [latest, previous] = await Promise.all([
+      getLeaderboardSnapshotBySitting(latestMeta.sitting),
+      previousMeta ? getLeaderboardSnapshotBySitting(previousMeta.sitting) : Promise.resolve(null),
+    ]);
+    return [latest, previous];
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch latest two leaderboard snapshots');
   }
 };
 

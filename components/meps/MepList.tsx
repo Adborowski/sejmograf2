@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Mep } from '@/types/mep';
 import MepCard from './MepCard';
 import MepFilters from './MepFilters';
+import { getClubColorMap } from '@/lib/clubStyles';
 
 interface MepListProps {
   meps: Mep[];
@@ -13,6 +14,7 @@ interface MepListProps {
 const ITEMS_PER_PAGE = 12;
 
 export default function MepList({ meps, clubs }: MepListProps) {
+  const clubColorMap = useMemo(() => getClubColorMap([...clubs].sort()), [clubs]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClub, setSelectedClub] = useState('');
@@ -23,12 +25,18 @@ export default function MepList({ meps, clubs }: MepListProps) {
     return meps.filter((mep) => {
       // Search filter
       if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesName =
-          mep.firstName.toLowerCase().includes(query) ||
-          mep.lastName.toLowerCase().includes(query) ||
-          mep.fullName.toLowerCase().includes(query);
-        if (!matchesName) return false;
+        const tokens = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+        const fields = [
+          mep.firstName.toLowerCase(),
+          mep.lastName.toLowerCase(),
+          mep.fullName.toLowerCase(),
+          String(mep.id),
+          mep.profession?.toLowerCase() ?? '',
+          mep.districtName?.toLowerCase() ?? '',
+          mep.voivodeship?.toLowerCase() ?? '',
+        ];
+        const allMatch = tokens.every((token) => fields.some((field) => field.includes(token)));
+        if (!allMatch) return false;
       }
 
       // Club filter
@@ -115,8 +123,8 @@ export default function MepList({ meps, clubs }: MepListProps) {
 
       {/* Results count */}
       <div className="mb-4 text-sm text-gray-600">
-        Showing {currentMeps.length} of {filteredMeps.length} MEPs
-        {filteredMeps.length !== meps.length && ` (filtered from ${meps.length} total)`}
+        Pokazuję {currentMeps.length} z {filteredMeps.length} posłów
+        {filteredMeps.length !== meps.length && ` (odfiltrowano z ${meps.length} łącznie)`}
       </div>
 
       {/* MEP Grid */}
@@ -135,7 +143,7 @@ export default function MepList({ meps, clubs }: MepListProps) {
                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                 }`}
               >
-                Previous
+                Poprzednia
               </button>
 
               {/* Page Numbers */}
@@ -169,14 +177,14 @@ export default function MepList({ meps, clubs }: MepListProps) {
                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                 }`}
               >
-                Next
+                Następna
               </button>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentMeps.map((mep) => (
-              <MepCard key={mep.id} mep={mep} />
+              <MepCard key={mep.id} mep={mep} clubColor={mep.club ? clubColorMap[mep.club] : undefined} />
             ))}
           </div>
         </>
@@ -197,9 +205,9 @@ export default function MepList({ meps, clubs }: MepListProps) {
               d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No MEPs found</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Nie znaleziono posłów</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Try adjusting your search or filter criteria
+            Spróbuj zmienić kryteria wyszukiwania
           </p>
         </div>
       )}

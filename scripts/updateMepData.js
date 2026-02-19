@@ -50,6 +50,11 @@ const steps = [
     script: "scripts/uploadToStorage.js",
     description: "Uploading MEP photos to Firebase Storage",
   },
+  {
+    name: "Save leaderboard snapshot",
+    script: "scripts/saveLeaderboardSnapshot.js",
+    description: "Saving leaderboard snapshot if a new sitting is detected",
+  },
 ];
 
 let currentStep = 0;

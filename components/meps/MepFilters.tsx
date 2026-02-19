@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CLUB_FULL_NAMES } from '@/lib/clubStyles';
 
 interface MepFiltersProps {
   clubs: string[];
@@ -58,13 +59,13 @@ export default function MepFilters({
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Filter MEPs</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Filtruj posłów</h2>
         {hasActiveFilters && (
           <button
             onClick={handleClearFilters}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
-            Clear all filters
+            Wyczyść filtry
           </button>
         )}
       </div>
@@ -76,7 +77,7 @@ export default function MepFilters({
             htmlFor="search"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            Search by name
+            Szukaj
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -98,7 +99,7 @@ export default function MepFilters({
               id="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Enter name..."
+              placeholder="Imię, nazwisko, ID, zawód, okręg, region…"
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white text-neutral-950 placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
@@ -110,7 +111,7 @@ export default function MepFilters({
             htmlFor="club"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            Political Club
+            Klub polityczny
           </label>
           <select
             id="club"
@@ -118,10 +119,10 @@ export default function MepFilters({
             onChange={(e) => handleClubChange(e.target.value)}
             className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-neutral-950 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
-            <option value="">All clubs</option>
+            <option value="">Wszystkie kluby</option>
             {clubs.map((club) => (
               <option key={club} value={club}>
-                {club}
+                {CLUB_FULL_NAMES[club] ?? club}
               </option>
             ))}
           </select>
@@ -130,7 +131,7 @@ export default function MepFilters({
         {/* Active Status Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Status
+            Status mandatu
           </label>
           <div className="flex gap-2">
             <button
@@ -141,7 +142,7 @@ export default function MepFilters({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              All
+              Wszyscy
             </button>
             <button
               onClick={() => handleActiveChange('active')}
@@ -151,7 +152,7 @@ export default function MepFilters({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Active
+              Aktywni
             </button>
             <button
               onClick={() => handleActiveChange('inactive')}
@@ -161,7 +162,7 @@ export default function MepFilters({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Inactive
+              Nieaktywni
             </button>
           </div>
         </div>

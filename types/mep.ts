@@ -51,6 +51,40 @@ export interface Mep {
 }
 
 /**
+ * A single MEP's entry in a leaderboard snapshot
+ */
+export interface LeaderboardEntry {
+  rank: number;
+  mepId: number;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  club: string;
+  attendanceRate: number; // 0-1 range
+  totalVoted: number;
+  totalVotings: number;
+}
+
+/**
+ * A point-in-time leaderboard snapshot, captured when a new sitting is detected
+ */
+export interface LeaderboardSnapshot {
+  sitting: number;        // the max sitting number that triggered this snapshot
+  date: string;           // date of that sitting
+  createdAt: any;         // Firestore Timestamp
+  activeMepCount: number;
+  rankings: LeaderboardEntry[];
+}
+
+/**
+ * Lightweight metadata for a snapshot (no rankings), used for listing/navigation
+ */
+export interface LeaderboardSnapshotMeta {
+  sitting: number;
+  date: string;
+}
+
+/**
  * Club/Party statistics
  */
 export interface ClubStats {
