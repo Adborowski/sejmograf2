@@ -41,7 +41,7 @@ export function RecentReviews({ getMepName }: { getMepName: (id: number) => stri
       <div className="px-6 py-4 border-b border-gray-100">
         <h2 className="text-lg font-bold text-gray-900">Ostatnie recenzje</h2>
       </div>
-      <div className="divide-y divide-gray-50">
+      <div className="divide-y divide-gray-200">
         {reviews.map((review, i) => {
           const mepName = getMepName(review.mepId);
           const emailDisplay = review.userEmail.split('@')[0];
@@ -50,23 +50,21 @@ export function RecentReviews({ getMepName }: { getMepName: (id: number) => stri
           });
           return (
             <div key={i} className="px-6 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-sm font-medium text-gray-700">{emailDisplay}</span>
-                    <StarDisplay value={review.stars} />
-                    <span className="text-xs text-gray-400">{date}</span>
-                  </div>
-                  {review.comment && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{review.comment}</p>
-                  )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                  <span className="text-sm font-medium text-gray-700">{emailDisplay}</span>
+                  <StarDisplay value={review.stars} />
+                  <span className="text-xs text-gray-400">{date}</span>
                 </div>
-                <Link
-                  href={`/mep/${review.mepId}`}
-                  className="flex-shrink-0 text-right text-sm font-medium text-blue-600 hover:underline"
-                >
-                  {mepName ?? `Poseł #${review.mepId}`}
-                </Link>
+                <p className="text-xs text-gray-400 mb-1">
+                  dla:{' '}
+                  <Link href={`/mep/${review.mepId}`} className="text-blue-600 hover:underline font-medium">
+                    {mepName ?? `Poseł #${review.mepId}`}
+                  </Link>
+                </p>
+                {review.comment && (
+                  <p className="text-sm text-gray-600 line-clamp-2">{review.comment}</p>
+                )}
               </div>
             </div>
           );
