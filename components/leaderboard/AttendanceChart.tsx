@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -37,7 +37,7 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-export function AttendanceChart({ meps }: { meps: any[] }) {
+export function AttendanceChart({ meps, initialVisible }: { meps: any[]; initialVisible?: string[] }) {
   const { chartData, clubs, clubColors } = useMemo(() => {
     // Map: sitting -> aggregates for overall + each club
     type SittingEntry = {
@@ -97,9 +97,17 @@ export function AttendanceChart({ meps }: { meps: any[] }) {
     return { chartData, clubs, clubColors };
   }, [meps]);
 
-  // Which clubs are visible (all on by default)
-  // All clubs hidden by default — user activates them individually
-  const [hiddenClubs, setHiddenClubs] = useState<Set<string>>(() => new Set(clubs));
+  // hiddenClubs initialized to empty; populated once clubs load (async meps data).
+  // useEffect avoids the stale-closure bug where useState initializer runs
+  // before meps arrive and clubs is still [].
+  const [hiddenClubs, setHiddenClubs] = useState<Set<string>>(new Set());
+  const [initialized, setInitialized] = useState(false);
+  useEffect(() => {
+    if (!initialized && clubs.length > 0) {
+      setHiddenClubs(new Set(clubs.filter((c) => !initialVisible?.includes(c))));
+      setInitialized(true);
+    }
+  }, [clubs, initialized, initialVisible]);
   const toggle = (club: string) =>
     setHiddenClubs((prev) => { const s = new Set(prev); s.has(club) ? s.delete(club) : s.add(club); return s; });
   const showOverall = !hiddenClubs.has('overall');

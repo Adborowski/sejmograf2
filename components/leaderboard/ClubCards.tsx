@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { getClubColorMap, CLUB_FULL_NAMES } from '@/lib/clubStyles';
 
 interface ClubStat {
@@ -59,9 +60,10 @@ export function ClubCards({ meps }: { meps: any[] }) {
         {clubs.map(({ club, color, activeMemberCount, totalVoted, totalVotings, attendanceRate }) => {
           const pct = (attendanceRate * 100).toFixed(1);
           return (
-            <div
+            <Link
               key={club}
-              className="border rounded-lg px-4 py-3"
+              href={`/club/${encodeURIComponent(club)}`}
+              className="block border rounded-lg px-4 py-3 hover:shadow-md transition-shadow"
               style={{ borderColor: `${color}40` }}
             >
               <div className="flex items-center justify-between mb-2">
@@ -89,7 +91,7 @@ export function ClubCards({ meps }: { meps: any[] }) {
                 <span>{activeMemberCount} {activeMemberCount === 1 ? 'poseł' : 'posłów'}</span>
                 <span>{totalVoted.toLocaleString()} / {totalVotings.toLocaleString()} głosowań</span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

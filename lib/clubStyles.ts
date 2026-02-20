@@ -44,7 +44,6 @@ export const CLUB_LOGOS: Record<string, string> = {
   Konfederacja:    `${SEJM_API_BASE}/Konfederacja/logo`,
   Konfederacja_KP: `${SEJM_API_BASE}/Konfederacja_KP/logo`,
   Lewica:          `${SEJM_API_BASE}/Lewica/logo`,
-  'niez.':         `${SEJM_API_BASE}/niez./logo`,
   PiS:             `${SEJM_API_BASE}/PiS/logo`,
   Polska2050:      `${SEJM_API_BASE}/Polska2050/logo`,
   'PSL-TD':        `${SEJM_API_BASE}/PSL-TD/logo`,

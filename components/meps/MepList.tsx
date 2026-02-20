@@ -111,6 +111,54 @@ export default function MepList({ meps, clubs }: MepListProps) {
     return pages;
   };
 
+  const pagination = totalPages > 1 ? (
+    <div className="flex items-center justify-center gap-2">
+      <button
+        onClick={() => goToPage(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`px-3 py-2 rounded-md text-sm font-medium ${
+          currentPage === 1
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+        }`}
+      >
+        Poprzednia
+      </button>
+
+      {getPageNumbers().map((page, index) =>
+        page === '...' ? (
+          <span key={`ellipsis-${index}`} className="px-2 text-gray-500">
+            ...
+          </span>
+        ) : (
+          <button
+            key={page}
+            onClick={() => goToPage(page as number)}
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
+              currentPage === page
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+            }`}
+          >
+            {page}
+          </button>
+        )
+      )}
+
+      <button
+        onClick={() => goToPage(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`px-3 py-2 rounded-md text-sm font-medium ${
+          currentPage === totalPages
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+        }`}
+      >
+        Następna
+      </button>
+    </div>
+  ) : null;
+
   return (
     <div>
       {/* Filters */}
@@ -130,63 +178,15 @@ export default function MepList({ meps, clubs }: MepListProps) {
       {/* MEP Grid */}
       {currentMeps.length > 0 ? (
         <>
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mb-6">
-              {/* Previous Button */}
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                }`}
-              >
-                Poprzednia
-              </button>
-
-              {/* Page Numbers */}
-              {getPageNumbers().map((page, index) =>
-                page === '...' ? (
-                  <span key={`ellipsis-${index}`} className="px-2 text-gray-500">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => goToPage(page as number)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-
-              {/* Next Button */}
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                }`}
-              >
-                Następna
-              </button>
-            </div>
-          )}
+          <div className="mb-6">{pagination}</div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentMeps.map((mep) => (
               <MepCard key={mep.id} mep={mep} clubColor={mep.club ? clubColorMap[mep.club] : undefined} />
             ))}
           </div>
+
+          <div className="mt-6">{pagination}</div>
         </>
       ) : (
         // No results
