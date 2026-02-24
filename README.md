@@ -1,241 +1,125 @@
-# Sejmograf2
+# Sejmograf
 
-A modern Next.js application with Firebase Realtime Database and Authentication.
+*An English version of this README is available below.*
 
-## Features
+**Sejmograf** śledzi, jak często polscy posłowie pojawiają się na głosowaniach. Dane pobierane są bezpośrednio z oficjalnego API Sejmu i aktualizowane codziennie, więc liczby są zawsze aktualne.
 
-- ✅ **Next.js 14+** with App Router and React Server Components
-- ✅ **TypeScript** for type safety
-- ✅ **Tailwind CSS** for styling
-- ✅ **Firebase Authentication** (Email/Password + Google OAuth)
-- ✅ **Firebase Realtime Database** with custom hooks
-- ✅ **Protected Routes** with authentication guards
-- ✅ **Responsive Design** with mobile-first approach
+Aplikacja dostępna pod adresem: [sejmograf.pl](https://sejmograf.pl)
 
-## Project Structure
+---
 
-```
-sejmograf2/
-├── app/                       # Next.js app directory
-│   ├── layout.tsx            # Root layout with providers
-│   ├── page.tsx              # Home page
-│   ├── login/                # Login page
-│   ├── signup/               # Signup page
-│   └── dashboard/            # Protected dashboard page
-├── components/
-│   └── auth/                 # Authentication components
-│       ├── LoginForm.tsx
-│       ├── SignupForm.tsx
-│       └── ProtectedRoute.tsx
-├── contexts/
-│   └── AuthContext.tsx       # Auth state management
-├── providers/
-│   └── Providers.tsx         # Provider wrapper
-├── hooks/
-│   ├── useFirebaseAuth.ts    # Auth hooks
-│   └── useRealtimeDatabase.ts # Database hooks
-├── lib/
-│   └── firebase/             # Firebase configuration
-│       ├── config.ts         # Firebase initialization
-│       ├── auth.ts           # Auth utilities
-│       └── database.ts       # Database utilities
-└── .env.local.example        # Environment template
-```
+## Co można zrobić
 
-## Getting Started
+### Sprawdź, kto głosuje — a kto nie
+Główny ranking porządkuje wszystkich 460 posłów według frekwencji na głosowaniach. Na pierwszy rzut oka widać, którzy politycy sumiennie wykonują swoją pracę, a którzy regularnie są nieobecni.
 
-### 1. Firebase Setup
+### Porównaj kluby parlamentarne
+Strona klubów pozwala zestawić frekwencję różnych ugrupowań — KO, PiS, TD, Lewicy i innych — na interaktywnym wykresie pokazującym, jak średnia każdego klubu zmieniała się w kolejnych posiedzeniach.
 
-1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Create a new project or select an existing one
-3. Enable **Authentication**:
-   - Go to Authentication → Sign-in method
-   - Enable **Email/Password** provider
-   - Enable **Google** provider (add your OAuth client)
-4. Enable **Realtime Database**:
-   - Go to Realtime Database
-   - Click "Create Database"
-   - Start in **test mode** (you'll configure security rules later)
-   - Choose a location
-5. Get your Firebase config:
-   - Go to Project Settings → General
-   - Scroll down to "Your apps"
-   - Click the web icon (</>) to add a web app
-   - Copy the configuration values
+### Wyszukaj dowolnego posła
+Każdy poseł ma swoją stronę profilową z:
+- ogólną frekwencją na głosowaniach,
+- wykresem pokazującym trend w kolejnych posiedzeniach Sejmu,
+- podstawowymi informacjami: klub, okręg wyborczy.
 
-### 2. Environment Variables
+### Szukaj i filtruj
+Znajdź dowolnego posła po nazwisku, przefiltruj listę według klubu lub wyświetl tylko aktualnie aktywnych parlamentarzystów.
 
-1. Copy the example environment file:
-   ```bash
-   cp .env.local.example .env.local
-   ```
+### Wystaw opinię
+Zalogowani użytkownicy mogą zostawić krótką opinię na profilu każdego posła. Wystarczy bezpłatne konto — rejestracja przez e-mail lub Google.
 
-2. Edit `.env.local` and add your Firebase configuration:
-   ```
-   NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
-   NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://your-project-id-default-rtdb.firebaseio.com
-   ```
+### Kontakt
+Masz uwagi lub zauważyłeś błąd? Skorzystaj z formularza kontaktowego na [sejmograf.pl/contact](https://sejmograf.pl/contact) — aplikacja jest w ciągłym rozwoju i chętnie słyszymy opinie.
 
-### 3. Install Dependencies
+---
 
-If not already installed, run:
+## Dane
+
+Dane o frekwencji pochodzą z oficjalnego API Sejmu i są aktualizowane automatycznie każdego dnia o 3:00 UTC. Każda aktualizacja pobiera najnowsze wyniki głosowań, oblicza frekwencję dla każdego posiedzenia i zapisuje wyniki do bazy danych.
+
+---
+
+## Technologie (dla współtwórców)
+
+- **Next.js** App Router, renderowanie po stronie klienta
+- **Firebase** — Firestore (dane), Auth (konta), Storage (zdjęcia posłów)
+- **Tailwind CSS v4**
+- **Recharts** — wykresy
+- **Resend** — wysyłka e-maili z formularza kontaktowego
+- Wdrożenie: **Vercel**; pipeline danych: **GitHub Actions**
+
+Aby uruchomić lokalnie, utwórz plik `.env.local` ze zmiennymi konfiguracyjnymi Firebase i `RESEND_API_KEY`, a następnie:
+
 ```bash
 npm install
-```
-
-### 4. Run the Development Server
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+---
 
-## Usage
+## Licencja
 
-### Authentication
+MIT
 
-The app provides complete authentication flows:
+---
+---
 
-- **Sign up**: Navigate to `/signup` to create a new account
-- **Login**: Navigate to `/login` to sign in
-- **Google OAuth**: Click "Sign in with Google" on the login page
-- **Dashboard**: Protected route at `/dashboard` (requires authentication)
+# Sejmograf — English
 
-### Using Auth in Components
+**Sejmograf** tracks how often Polish members of parliament (posłowie) show up to vote. It pulls data directly from the official Sejm API and updates daily, so the numbers are always current.
 
-```tsx
-'use client';
+Live at: [sejmograf.pl](https://sejmograf.pl)
 
-import { useAuth } from '@/contexts/AuthContext';
+---
 
-export default function MyComponent() {
-  const { user, loading, signIn, signOut } = useAuth();
+## What you can do
 
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <div>Please sign in</div>;
+### See who shows up — and who doesn't
+The main leaderboard ranks all 460 MPs by their attendance rate across all voting sessions. You can see at a glance which politicians are doing their job and which ones are absent most of the time.
 
-  return <div>Welcome, {user.email}</div>;
-}
-```
+### Compare political clubs
+The clubs page lets you compare attendance across parties — KO, PiS, TD, Lewica, and others — with an interactive chart showing how each club's average has changed over time.
 
-### Using Realtime Database
+### Look up any MP
+Every MP has their own profile page with:
+- Their overall attendance rate
+- A chart showing attendance trend over each parliamentary sitting
+- Basic info: club, constituency
 
-#### Read Data (one-time)
+### Search and filter
+Find any MP by name, filter by political club, or show only currently active members.
 
-```tsx
-import { useReadData } from '@/hooks/useRealtimeDatabase';
+### Leave a review
+Logged-in users can leave a short text review on any MP's profile. Create a free account with email or sign in with Google.
 
-const { data, loading, error } = useReadData('users/123');
-```
+### Contact
+Got feedback or spotted an error? Use the contact form at [sejmograf.pl/contact](https://sejmograf.pl/contact) — the app is actively developed and feedback is welcome.
 
-#### Subscribe to Real-time Updates
+---
 
-```tsx
-import { useRealtimeData } from '@/hooks/useRealtimeDatabase';
+## Data
 
-const { data, loading, error } = useRealtimeData('messages');
-// Data updates automatically when changed in Firebase
-```
+Attendance data comes from the official Sejm API and is updated automatically every day at 3AM UTC via a scheduled pipeline. Each update fetches the latest voting records, calculates attendance rates per sitting, and writes the results to Firestore.
 
-#### Write Data
+---
 
-```tsx
-import { useDatabaseWrite } from '@/hooks/useRealtimeDatabase';
+## Tech (for contributors)
 
-const { write, update, remove, push, loading, error } = useDatabaseWrite();
+- **Next.js** App Router, all client-rendered
+- **Firebase** — Firestore (data), Auth (accounts), Storage (MP photos)
+- **Tailwind CSS v4**
+- **Recharts** for charts
+- **Resend** for contact form emails
+- Deployed on **Vercel**; data pipeline on **GitHub Actions**
 
-// Write data
-await write('users/123', { name: 'John', age: 30 });
-
-// Update specific fields
-await update('users/123', { age: 31 });
-
-// Add to a list
-const key = await push('messages', { text: 'Hello!', timestamp: Date.now() });
-
-// Delete data
-await remove('users/123');
-```
-
-### Protecting Routes
-
-Wrap any page with `ProtectedRoute` to require authentication:
-
-```tsx
-'use client';
-
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-
-export default function MyPage() {
-  return (
-    <ProtectedRoute>
-      <div>This content requires authentication</div>
-    </ProtectedRoute>
-  );
-}
-```
-
-## Firebase Security Rules
-
-**Important**: The database is currently in test mode. Before deploying to production, configure security rules:
-
-### Realtime Database Rules Example
-
-```json
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
-    },
-    "public": {
-      ".read": true,
-      ".write": "auth != null"
-    }
-  }
-}
-```
-
-## Building for Production
+To run locally, copy `.env.local` with the Firebase config vars and `RESEND_API_KEY`, then:
 
 ```bash
-npm run build
-npm run start
+npm install
+npm run dev
 ```
 
-## Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Import the project in [Vercel](https://vercel.com)
-3. Add environment variables in Vercel dashboard
-4. Deploy!
-
-### Other Platforms
-
-This is a standard Next.js app and can be deployed to:
-- AWS Amplify
-- Netlify
-- Railway
-- Render
-- DigitalOcean App Platform
-- Self-hosted VPS
-
-## Notes
-
-- Firebase API keys are safe to expose (protected by Firebase security rules)
-- Configure Firebase security rules before production
-- Google OAuth requires setting up OAuth consent screen in Google Cloud Console
-- Email verification can be enabled in Firebase Authentication settings
+---
 
 ## License
 
