@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     // Send email via Resend
     const data = await resend.emails.send({
-      from: 'Formularz Kontaktowy <onboarding@resend.dev>',
+      from: 'Formularz Kontaktowy <kontakt@sejmograf.pl>',
       to: 'kontakt@sejmograf.pl',
       replyTo: email,
       subject: `[Sejmograf] Wiadomość od ${name}`,
