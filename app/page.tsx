@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { NavBar } from '@/components/layout/NavBar';
-import { useMeps } from '@/hooks/useMeps';
-import { AttendanceChart } from '@/components/leaderboard/AttendanceChart';
-import { ClubCards } from '@/components/leaderboard/ClubCards';
-import { MepRankRow } from '@/components/leaderboard/MepRankRow';
-import { BiggestMovers } from '@/components/dashboard/BiggestMovers';
-import { RecentReviews } from '@/components/dashboard/RecentReviews';
-import { useLatestSittingDate } from '@/hooks/useLatestSittingDate';
+import Link from "next/link";
+import { NavBar } from "@/components/layout/NavBar";
+import { useMeps } from "@/hooks/useMeps";
+import { AttendanceChart } from "@/components/leaderboard/AttendanceChart";
+import { ClubCards } from "@/components/leaderboard/ClubCards";
+import { MepRankRow } from "@/components/leaderboard/MepRankRow";
+import { BiggestMovers } from "@/components/dashboard/BiggestMovers";
+import { RecentReviews } from "@/components/dashboard/RecentReviews";
+import { useLatestSittingDate } from "@/hooks/useLatestSittingDate";
 
 const LEADERBOARD_SIZE = 20;
 
@@ -17,7 +17,10 @@ export default function LeaderboardPage() {
   const { sitting, date } = useLatestSittingDate();
 
   const activeSorted = [...meps]
-    .filter((m) => m.active && m.attendanceRate !== null && m.attendanceRate !== undefined)
+    .filter(
+      (m) =>
+        m.active && m.attendanceRate !== null && m.attendanceRate !== undefined,
+    )
     .sort((a, b) => b.attendanceRate - a.attendanceRate);
 
   const top = activeSorted.slice(0, LEADERBOARD_SIZE);
@@ -27,13 +30,18 @@ export default function LeaderboardPage() {
   const rankMap = new Map<number, number>();
   let currentRank = 1;
   for (let i = 0; i < activeSorted.length; i++) {
-    if (i > 0 && activeSorted[i].attendanceRate !== activeSorted[i - 1].attendanceRate) {
+    if (
+      i > 0 &&
+      activeSorted[i].attendanceRate !== activeSorted[i - 1].attendanceRate
+    ) {
       currentRank++;
     }
     rankMap.set(activeSorted[i].id, currentRank);
   }
 
-  const mepNameMap = new Map(meps.map((m: any) => [m.id, m.fullName as string]));
+  const mepNameMap = new Map(
+    meps.map((m: any) => [m.id, m.fullName as string]),
+  );
   const getMepName = (id: number) => mepNameMap.get(id) ?? null;
 
   return (
@@ -41,18 +49,22 @@ export default function LeaderboardPage() {
       <NavBar
         subtitle="Monitor Polskiego Sejmu"
         navLinks={[
-          { href: '/leaderboard', label: 'Pełny ranking' },
-          { href: '/clubs', label: 'Przeglądaj kluby' },
-          { href: '/search', label: 'Szukaj posłów' },
+          { href: "/leaderboard", label: "Pełny ranking" },
+          { href: "/clubs", label: "Przeglądaj kluby" },
+          { href: "/search", label: "Szukaj posłów" },
         ]}
       />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero */}
         <div className="bg-blue-600 text-white rounded-xl shadow-lg px-8 py-7 mb-8">
-          <h2 className="text-2xl font-bold mb-2">Czy Twój poseł chodzi na głosowania?</h2>
+          <h2 className="text-2xl font-bold mb-2">
+            Czy Twój poseł chodzi na głosowania?
+          </h2>
           <p className="text-blue-100 text-base leading-relaxed max-w-2xl">
-            Sejmograf śledzi obecność wszystkich posłów na głosowaniach sejmowych. Sprawdź, kto pojawia się regularnie, a kto opuszcza posiedzenia — i wyraź swoją opinię.
+            Sejmograf śledzi obecność wszystkich posłów na głosowaniach
+            sejmowych. Sprawdź, kto pojawia się regularnie, a kto opuszcza
+            posiedzenia — i wyraź swoją opinię.
           </p>
           {date && sitting && (
             <p className="mt-4 text-xs text-blue-200">
@@ -75,27 +87,45 @@ export default function LeaderboardPage() {
         ) : (
           <>
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Ranking Obecności</h2>
-              <p className="text-sm text-gray-500 mt-1">Dla posiedzeń wielodniowych jako data referencyjna przyjmowany jest ostatni dzień.</p>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Ranking Obecności
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Dla posiedzeń wielodniowych jako data referencyjna przyjmowany
+                jest ostatni dzień.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-8">
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-200 bg-green-50">
-                  <h3 className="font-semibold text-green-800">Najlepsza obecność</h3>
-                  <p className="text-xs text-green-600 mt-0.5">Top {LEADERBOARD_SIZE} aktywnych posłów</p>
+                  <h3 className="font-semibold text-green-800">
+                    Najlepsza obecność
+                  </h3>
+                  <p className="text-xs text-green-600 mt-0.5">
+                    Top {LEADERBOARD_SIZE} aktywnych posłów
+                  </p>
                 </div>
                 <div className="divide-y divide-gray-100">
                   {top.map((mep) => (
-                    <MepRankRow key={mep.id} rank={rankMap.get(mep.id)!} mep={mep} highlight="top" />
+                    <MepRankRow
+                      key={mep.id}
+                      rank={rankMap.get(mep.id)!}
+                      mep={mep}
+                      highlight="top"
+                    />
                   ))}
                 </div>
               </div>
 
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-200 bg-red-50">
-                  <h3 className="font-semibold text-red-800">Najgorsza obecność</h3>
-                  <p className="text-xs text-red-500 mt-0.5">Ostatnie {LEADERBOARD_SIZE} aktywnych posłów</p>
+                  <h3 className="font-semibold text-red-800">
+                    Najniższa obecność
+                  </h3>
+                  <p className="text-xs text-red-500 mt-0.5">
+                    Ostatnie {LEADERBOARD_SIZE} aktywnych posłów
+                  </p>
                 </div>
                 <div className="divide-y divide-gray-100">
                   {bottom.map((mep) => (

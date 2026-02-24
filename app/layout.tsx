@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import { Providers } from "@/providers/Providers";
 
@@ -28,7 +29,28 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <footer className="bg-white">
+            <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-gray-400">
+              <span>© {new Date().getFullYear()} Adam Borowski Digital</span>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/contact"
+                  className="hover:text-gray-600 transition-colors"
+                >
+                  Kontakt
+                </Link>
+                <Link
+                  href="/privacy"
+                  className="hover:text-gray-600 transition-colors"
+                >
+                  Polityka prywatności
+                </Link>
+              </div>
+            </div>
+          </footer>
+        </Providers>
       </body>
     </html>
   );
