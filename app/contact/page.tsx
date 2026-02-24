@@ -84,7 +84,7 @@ export default function ContactPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Twoje imię i nazwisko"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
+                  className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={loading}
                 />
               </div>
@@ -99,7 +99,7 @@ export default function ContactPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="twój.email@example.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
+                  className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={loading}
                 />
               </div>
@@ -114,7 +114,7 @@ export default function ContactPage() {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Podziel się swoją opinią, sugestiami dotyczącymi nowych funkcji lub zgłoś błędy..."
                   rows={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition resize-none"
+                  className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   disabled={loading}
                 />
               </div>
