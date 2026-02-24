@@ -1,11 +1,11 @@
 'use client';
 
 import { use, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useMeps } from '@/hooks/useMeps';
 import { MepRankRow } from '@/components/leaderboard/MepRankRow';
 import { AttendanceChart } from '@/components/leaderboard/AttendanceChart';
 import { CLUB_FULL_NAMES, CLUB_LOGOS, getClubColorMap } from '@/lib/clubStyles';
+import { NavBar } from '@/components/layout/NavBar';
 
 // Derive a stable color map from the known club list
 const ALL_SORTED_CLUBS = Object.keys(CLUB_FULL_NAMES).sort();
@@ -54,19 +54,7 @@ export default function ClubPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 gap-4">
-            <Link
-              href="/clubs"
-              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-            >
-              ← Wróć
-            </Link>
-            <h1 className="text-neutral-950 text-xl font-bold">Sejmograf</h1>
-          </div>
-        </div>
-      </nav>
+      <NavBar backHref="/clubs" maxWidth="max-w-4xl" />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Club header */}

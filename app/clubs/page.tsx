@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useMeps } from '@/hooks/useMeps';
 import { CLUB_FULL_NAMES, CLUB_LOGOS, getClubColorMap } from '@/lib/clubStyles';
 import { AttendanceChart } from '@/components/leaderboard/AttendanceChart';
+import { NavBar } from '@/components/layout/NavBar';
 
 const ALL_SORTED_CLUBS = Object.keys(CLUB_FULL_NAMES).sort();
 const STATIC_COLOR_MAP = getClubColorMap(ALL_SORTED_CLUBS);
@@ -42,19 +43,7 @@ export default function ClubBrowserPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 gap-4">
-            <Link
-              href="/"
-              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-            >
-              ← Wróć
-            </Link>
-            <h1 className="text-neutral-950 text-xl font-bold">Sejmograf</h1>
-          </div>
-        </div>
-      </nav>
+      <NavBar backHref="/" maxWidth="max-w-5xl" />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">

@@ -165,7 +165,7 @@ export function AttendanceChart({ meps, initialVisible }: { meps: any[]; initial
         })}
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
+      <ResponsiveContainer width="100%" height={280}>
         <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
           <XAxis
@@ -173,6 +173,7 @@ export function AttendanceChart({ meps, initialVisible }: { meps: any[]; initial
             tick={{ fontSize: 11, fill: '#9ca3af' }}
             tickLine={false}
             axisLine={false}
+            minTickGap={40}
             label={{ value: 'Posiedzenie', position: 'insideBottomRight', offset: -4, fontSize: 11, fill: '#d1d5db' }}
           />
           <YAxis
@@ -190,10 +191,10 @@ export function AttendanceChart({ meps, initialVisible }: { meps: any[]; initial
             type="linear"
             dataKey="overall"
             stroke="#9ca3af"
-            strokeWidth={2}
+            strokeWidth={2.5}
             strokeDasharray="5 3"
             dot={false}
-            activeDot={{ r: 3, strokeWidth: 0 }}
+            activeDot={{ r: 4, strokeWidth: 0 }}
             hide={!showOverall}
           />
 
@@ -204,9 +205,9 @@ export function AttendanceChart({ meps, initialVisible }: { meps: any[]; initial
               type="linear"
               dataKey={club}
               stroke={clubColors[club]}
-              strokeWidth={1.5}
+              strokeWidth={2}
               dot={false}
-              activeDot={{ r: 3, strokeWidth: 0, fill: clubColors[club] }}
+              activeDot={{ r: 4, strokeWidth: 0, fill: clubColors[club] }}
               hide={hiddenClubs.has(club)}
               connectNulls
             />

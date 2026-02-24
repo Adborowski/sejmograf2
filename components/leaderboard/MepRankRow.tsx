@@ -12,7 +12,8 @@ export function AttendanceBar({ rate }: { rate: number }) {
     rate >= 0.8 ? 'text-green-700' : rate >= 0.5 ? 'text-yellow-700' : 'text-red-700';
   return (
     <div className="flex items-center gap-3">
-      <div className="w-28 bg-gray-200 rounded-full h-2 flex-shrink-0">
+      {/* Bar hidden on mobile to save space for the MEP name */}
+      <div className="hidden sm:block w-28 bg-gray-200 rounded-full h-2 flex-shrink-0">
         <div className={`${color} h-2 rounded-full`} style={{ width: `${rate * 100}%` }} />
       </div>
       <span className={`text-sm font-semibold tabular-nums w-14 text-right ${textColor}`}>
@@ -39,7 +40,7 @@ export function MepRankRow({
   return (
     <Link
       href={`/mep/${mep.id}`}
-      className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors"
+      className="flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 hover:bg-gray-50 transition-colors"
     >
       <span
         className={`w-8 text-right text-sm font-bold tabular-nums flex-shrink-0 ${

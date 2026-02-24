@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useMeps, useClubs } from '@/hooks/useMeps';
 import MepList from '@/components/meps/MepList';
 import { Mep } from '@/types/mep';
+import { NavBar } from '@/components/layout/NavBar';
 
 export default function SearchPage() {
   const { meps, loading: mepsLoading, error: mepsError } = useMeps();
@@ -11,20 +11,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 gap-4">
-            <Link
-              href="/"
-              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-            >
-              ← Wróć
-            </Link>
-            <h1 className="text-neutral-950 text-xl font-bold">Sejmograf</h1>
-          </div>
-        </div>
-      </nav>
+      <NavBar backHref="/" maxWidth="max-w-7xl" />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

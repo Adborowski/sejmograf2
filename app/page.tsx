@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { NavBar } from '@/components/layout/NavBar';
 import { useMeps } from '@/hooks/useMeps';
 import { AttendanceChart } from '@/components/leaderboard/AttendanceChart';
 import { ClubCards } from '@/components/leaderboard/ClubCards';
@@ -37,37 +38,14 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div>
-              <h1 className="text-neutral-950 text-xl font-bold">Sejmograf</h1>
-              <p className="text-xs text-gray-500">Monitor Polskiego Sejmu</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href="/leaderboard"
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-              >
-                Pełny ranking
-              </Link>
-              <Link
-                href="/clubs"
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-              >
-                Przeglądaj kluby
-              </Link>
-              <Link
-                href="/search"
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-              >
-                Szukaj posłów
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <NavBar
+        subtitle="Monitor Polskiego Sejmu"
+        navLinks={[
+          { href: '/leaderboard', label: 'Pełny ranking' },
+          { href: '/clubs', label: 'Przeglądaj kluby' },
+          { href: '/search', label: 'Szukaj posłów' },
+        ]}
+      />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero */}
