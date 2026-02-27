@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "update-mep-data": "node scripts/updateMepData.js"
+    "update-mep-data": "node scripts/updateMepData.js",
+    "small-blast": "node scripts/sendSmallBlast.js",
+    "big-blast": "node scripts/sendBigBlast.js"
   },
   "dependencies": {
     "firebase": "^12.9.0",

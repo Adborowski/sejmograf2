@@ -1,0 +1,46 @@
+name: Small Email Blast
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'   # every 4 hours — sends 1 email per run over ~3 days
+  workflow_dispatch:          # manual trigger from GitHub UI
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Google Cloud credentials
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" | base64 -d > $HOME/gcloud-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+
+      - name: Send next email
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: node scripts/sendSmallBlast.js --limit 1
+
+      - name: Cleanup
+        if: always()
+        run: rm -f $HOME/gcloud-key.json
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "⚠️ Small blast step failed!"
+          echo "Check the logs at: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

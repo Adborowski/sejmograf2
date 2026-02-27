@@ -52,5 +52,11 @@ firestore-debug.log
 scraping/img/
 scraping/*.json
 
+# email blast scripts — recipient lists and progress logs contain personal data
+scripts/small-blast-config.json
+scripts/editors.json
+scripts/small-blast-sent.json
+scripts/big-blast-log.json
+
 .service-account-keys/
 secrets/
