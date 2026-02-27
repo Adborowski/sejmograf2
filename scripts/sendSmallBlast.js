@@ -15,7 +15,7 @@
  * Usage:
  *   node scripts/sendSmallBlast.js [--limit N] [--dry-run]
  *
- * Config:    scripts/small-blast-config.json   [{name, email}]
+ * Config:    Firestore  blast_config/small_blast  { recipients: [{name, email}] }
  * Progress:  Firestore  blast_progress/small_blast  (source of truth)
  * Local log: scripts/small-blast-sent.json  (local mode only, for convenience)
  *
@@ -34,8 +34,7 @@ const LIMIT_IDX = process.argv.indexOf('--limit');
 const LIMIT     = LIMIT_IDX !== -1 ? parseInt(process.argv[LIMIT_IDX + 1], 10) : null;
 const GHA_MODE  = LIMIT !== null;
 
-const CONFIG_PATH = path.resolve(__dirname, 'small-blast-config.json');
-const SENT_PATH   = path.resolve(__dirname, 'small-blast-sent.json');
+const SENT_PATH = path.resolve(__dirname, 'small-blast-sent.json');
 const SENDER      = 'Sejmograf <kontakt@sejmograf.pl>';
 
 // ── Variation content (Polish) ───────────────────────────────────────────────
@@ -144,6 +143,16 @@ function buildEmail(recipient, combo) {
 
 // ── Firestore helpers ─────────────────────────────────────────────────────────
 
+async function readFirestoreRecipients(db) {
+  const snap = await db.collection('blast_config').doc('small_blast').get();
+  if (!snap.exists) throw new Error('blast_config/small_blast not found in Firestore. Upload recipients first.');
+  const recipients = snap.data().recipients;
+  if (!Array.isArray(recipients) || recipients.length === 0) {
+    throw new Error('blast_config/small_blast.recipients must be a non-empty array of {name, email} objects');
+  }
+  return recipients;
+}
+
 async function readFirestoreProgress(db) {
   const snap = await db.collection('blast_progress').doc('small_blast').get();
   return snap.exists ? (snap.data().sent || []) : [];
@@ -164,22 +173,16 @@ async function main() {
 
   if (GHA_MODE && (isNaN(LIMIT) || LIMIT < 1)) throw new Error('--limit must be a positive integer');
 
-  // Load recipients
-  if (!fs.existsSync(CONFIG_PATH)) {
-    throw new Error(`Config file not found: ${CONFIG_PATH}`);
-  }
-  const recipients = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
-  if (!Array.isArray(recipients) || recipients.length === 0) {
-    throw new Error('small-blast-config.json must be a non-empty array of {name, email} objects');
-  }
-  console.log(`${colors.green}✓ Config loaded: ${recipients.length} recipients${colors.reset}`);
+  // Initialize Firebase (always needed — recipients live in Firestore)
+  const db = initFirebase();
+
+  // Load recipients from Firestore
+  const recipients = await readFirestoreRecipients(db);
+  console.log(`${colors.green}✓ Config loaded: ${recipients.length} recipients (Firestore)${colors.reset}`);
 
   // Assign all combinations upfront (deterministic — same result every time)
   const combos = assignCombinations(recipients.length);
   console.log(`${colors.green}✓ Combinations assigned (seed: 42, pool: ${buildCombinationPool().length})${colors.reset}`);
-
-  // Initialize Firebase (unless dry-run)
-  const db = DRY_RUN ? null : initFirebase();
 
   // Determine starting index
   let startIndex = 0;
