@@ -16,9 +16,11 @@
  */
 'use strict';
 
-const fs    = require('fs');
-const path  = require('path');
-const admin = require('firebase-admin');
+const fs     = require('fs');
+const path   = require('path');
+const dns    = require('dns').promises;
+const crypto = require('crypto');
+const admin  = require('firebase-admin');
 const { colors, initFirebase, initResend, CLUB_FULL_NAMES } = require('./blastUtils');
 
 // ── CLI flags ─────────────────────────────────────────────────────────────────
@@ -30,6 +32,20 @@ const LIMIT        = limitIdx !== -1 ? parseInt(process.argv[limitIdx + 1], 10) 
 
 const EDITORS_PATH = path.resolve(__dirname, 'editors.json');
 const SENDER       = 'Sejmograf <kontakt@sejmograf.pl>';
+const SITE_URL     = 'https://sejmograf.pl';
+
+// ── Unsubscribe token ─────────────────────────────────────────────────────────
+
+function generateUnsubscribeUrl(email) {
+  const secret = process.env.UNSUBSCRIBE_SECRET;
+  if (!secret) throw new Error('UNSUBSCRIBE_SECRET env var not set');
+  const token = crypto.createHmac('sha256', secret)
+    .update(email.toLowerCase())
+    .digest('hex')
+    .slice(0, 32);
+  const e = Buffer.from(email).toString('base64url');
+  return `${SITE_URL}/api/unsubscribe?e=${e}&t=${token}`;
+}
 
 // ── Personalisation helpers ───────────────────────────────────────────────────
 
@@ -68,7 +84,7 @@ function getBestWorstSitting(votingStats) {
   };
 }
 
-function buildMepEmail(mep, rank, totalActive) {
+function buildMepEmail(mep, rank, totalActive, unsubscribeUrl) {
   const { firstName, id, club, attendanceRate, votingStats } = mep;
   const clubName = CLUB_FULL_NAMES[club] || club;
   const pct = formatPct(attendanceRate ?? 0);
@@ -103,12 +119,15 @@ function buildMepEmail(mep, rank, totalActive) {
     'Adam Borowski',
     'Sejmograf',
     'https://sejmograf.pl',
+    '',
+    '---',
+    `Aby wypisać się z listy, kliknij: ${unsubscribeUrl}`,
   );
 
   return { subject, body: lines.join('\n') };
 }
 
-function buildEditorEmail(editor) {
+function buildEditorEmail(editor, unsubscribeUrl) {
   const { outlet } = editor;
   const greeting = outlet ? `Szanowna Redakcjo ${outlet},` : 'Szanowna Redakcjo,';
 
@@ -125,9 +144,33 @@ function buildEditorEmail(editor) {
     'Adam Borowski',
     'Sejmograf',
     'https://sejmograf.pl',
+    '',
+    '---',
+    `Aby wypisać się z listy, kliknij: ${unsubscribeUrl}`,
   ].join('\n');
 
   return { subject: 'Sejmograf — monitor frekwencji głosowań posłów Sejmu RP', body };
+}
+
+// ── MX validation ─────────────────────────────────────────────────────────────
+
+// Returns true if the email domain has at least one valid MX record.
+// Results are cached per domain to avoid redundant DNS lookups.
+const mxCache = new Map();
+
+async function hasMxRecord(email) {
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain) return false;
+  if (mxCache.has(domain)) return mxCache.get(domain);
+  try {
+    const records = await dns.resolveMx(domain);
+    const valid = Array.isArray(records) && records.length > 0;
+    mxCache.set(domain, valid);
+    return valid;
+  } catch {
+    mxCache.set(domain, false);
+    return false;
+  }
 }
 
 // ── Firestore log helpers ─────────────────────────────────────────────────────
@@ -165,7 +208,8 @@ async function main() {
     for (let i = 0; i < editors.length; i++) {
       const editor = editors[i];
       const { email, name } = editor;
-      const { subject, body } = buildEditorEmail(editor);
+      const unsubUrl = DRY_RUN ? `${SITE_URL}/api/unsubscribe?e=...&t=...` : generateUnsubscribeUrl(email);
+      const { subject, body } = buildEditorEmail(editor, unsubUrl);
 
       console.log(`${colors.bold}[${i + 1}/${editors.length}]${colors.reset} ${name} <${email}>`);
       console.log(`  Subject: "${subject}"`);
@@ -177,7 +221,13 @@ async function main() {
         sentCount++;
       } else {
         try {
-          const result = await resend.emails.send({ from: SENDER, to: email, subject, text: body });
+          const result = await resend.emails.send({
+            from: SENDER, to: email, subject, text: body,
+            headers: {
+              'List-Unsubscribe': `<${unsubUrl}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          });
           if (result.error) throw new Error(result.error.message ?? JSON.stringify(result.error));
           console.log(`  ${colors.green}✓ Sent (id: ${result.data?.id})${colors.reset}\n`);
           sentCount++;
@@ -214,12 +264,20 @@ async function main() {
   const withEmail = allActive.filter(m => m.email && m.email.trim());
   console.log(`${colors.green}✓ ${withEmail.length} have email addresses${colors.reset}`);
 
+  // Load unsubscribes and filter them out
+  const unsubSnap  = DRY_RUN ? { docs: [] } : await db.collection('unsubscribes').get();
+  const unsubEmails = new Set(unsubSnap.docs.map(d => d.id.toLowerCase()));
+  if (unsubEmails.size > 0) {
+    console.log(`${colors.yellow}✓ ${unsubEmails.size} unsubscribed — will skip${colors.reset}`);
+  }
+  const eligible = withEmail.filter(m => !unsubEmails.has(m.email.toLowerCase()));
+
   // Load progress log from Firestore
   const log     = DRY_RUN ? [] : await loadLog(db);
   const sentIds = new Set(log.map(e => e.mepId));
   console.log(`${colors.dim}✓ Progress loaded: ${sentIds.size} already sent${colors.reset}\n`);
 
-  const remaining = withEmail.filter(m => !sentIds.has(m.id));
+  const remaining = eligible.filter(m => !sentIds.has(m.id));
   const toSend    = remaining.slice(0, LIMIT);
   const afterThis = remaining.length - toSend.length;
 
@@ -231,17 +289,28 @@ async function main() {
     return;
   }
 
+  // MX validation — filter out addresses whose domain has no MX record
+  console.log(`${colors.cyan}Validating MX records...${colors.reset}`);
+  const mxResults = await Promise.all(toSend.map(m => hasMxRecord(m.email)));
+  const validated  = toSend.filter((_, i) => mxResults[i]);
+  const skipped    = toSend.filter((_, i) => !mxResults[i]);
+  if (skipped.length > 0) {
+    skipped.forEach(m => console.log(`  ${colors.yellow}⚠ No MX — skipping ${m.email}${colors.reset}`));
+  }
+  console.log(`${colors.green}✓ ${validated.length} addresses pass MX check (${skipped.length} skipped)${colors.reset}\n`);
+
   const resend = DRY_RUN ? null : initResend();
   let sentCount = 0;
   let failCount = 0;
 
-  for (let i = 0; i < toSend.length; i++) {
-    const mep  = toSend[i];
+  for (let i = 0; i < validated.length; i++) {
+    const mep  = validated[i];
     const rank = rankMap.get(mep.id);
-    const { subject, body } = buildMepEmail(mep, rank, totalActive);
+    const unsubUrl = DRY_RUN ? `${SITE_URL}/api/unsubscribe?e=...&t=...` : generateUnsubscribeUrl(mep.email);
+    const { subject, body } = buildMepEmail(mep, rank, totalActive, unsubUrl);
     const pct = formatPct(mep.attendanceRate ?? 0);
 
-    console.log(`${colors.bold}[${i + 1}/${toSend.length}]${colors.reset} ${mep.fullName || `${mep.firstName} ${mep.lastName}`} <${mep.email}>`);
+    console.log(`${colors.bold}[${i + 1}/${validated.length}]${colors.reset} ${mep.fullName || `${mep.firstName} ${mep.lastName}`} <${mep.email}>`);
     console.log(`  ${colors.dim}${mep.club}, rank ${rank}/${totalActive}, attendance ${pct}%${colors.reset}`);
     console.log(`  Subject: "${subject}"`);
 
@@ -252,7 +321,13 @@ async function main() {
       sentCount++;
     } else {
       try {
-        const result = await resend.emails.send({ from: SENDER, to: mep.email, subject, text: body });
+        const result = await resend.emails.send({
+            from: SENDER, to: mep.email, subject, text: body,
+            headers: {
+              'List-Unsubscribe': `<${unsubUrl}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          });
         if (result.error) throw new Error(result.error.message ?? JSON.stringify(result.error));
         console.log(`  ${colors.green}✓ Sent (id: ${result.data?.id})${colors.reset}\n`);
         const entry = {
