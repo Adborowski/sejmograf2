@@ -76,6 +76,27 @@ function estimatedCompletion(remaining: number, dailyRate: number) {
   return date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' });
 }
 
+// Small blast cron: 0 */4 * * * — fires at 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC
+function nextSmallBlastRun() {
+  const now = new Date();
+  const nextRun = new Date(now);
+  const currentHourUtc = now.getUTCHours();
+  const nextHourUtc = Math.ceil((currentHourUtc + 1) / 4) * 4; // next multiple of 4
+  if (nextHourUtc >= 24) {
+    nextRun.setUTCDate(nextRun.getUTCDate() + 1);
+    nextRun.setUTCHours(0, 0, 0, 0);
+  } else {
+    nextRun.setUTCHours(nextHourUtc, 0, 0, 0);
+  }
+  const diffMs = nextRun.getTime() - now.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+  const h = Math.floor(diffMins / 60);
+  const m = diffMins % 60;
+  const timeStr = nextRun.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+  const countdown = h > 0 ? `${h} godz. ${m} min.` : `${m} min.`;
+  return { countdown, timeStr };
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function BlastMonitorPage() {
@@ -137,6 +158,7 @@ export default function BlastMonitorPage() {
   const smallTotal = 18;
   const smallBadge = statusBadge(smallSent.length, smallTotal);
   const smallPct   = Math.round((smallSent.length / smallTotal) * 100);
+  const nextRun    = nextSmallBlastRun();
 
   // ── Big blast data ──────────────────────────────────────────────────────────
   const bigEntries  = big?.entries ?? [];
@@ -179,6 +201,9 @@ export default function BlastMonitorPage() {
 
           <p className="text-xs text-gray-400 mb-4">
             Uruchamia się automatycznie co 4 godziny przez GitHub Actions (workflow: <code>small-blast.yml</code>).
+            {smallSent.length < smallTotal && (
+              <> Następna wysyłka za <span className="font-medium text-gray-600">{nextRun.countdown}</span> (ok. {nextRun.timeStr} UTC).</>
+            )}
           </p>
 
           {smallSent.length === 0 ? (

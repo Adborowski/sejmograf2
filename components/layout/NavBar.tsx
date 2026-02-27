@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { FaSatelliteDish } from 'react-icons/fa';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavBarProps {
   subtitle?: string;
@@ -13,6 +14,7 @@ interface NavBarProps {
 
 export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5xl' }: NavBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, signOut, loading: authLoading } = useAuth();
 
   return (
     <nav className="bg-white shadow-sm">
@@ -38,9 +40,9 @@ export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5x
             </div>
           </div>
 
-          {navLinks.length > 0 && (
-            <>
-              {/* Desktop: inline links */}
+          <div className="flex items-center gap-2">
+            {/* Desktop: nav links */}
+            {navLinks.length > 0 && (
               <div className="hidden sm:flex items-center gap-2">
                 {navLinks.map(({ href, label }) => (
                   <Link
@@ -52,8 +54,31 @@ export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5x
                   </Link>
                 ))}
               </div>
+            )}
 
-              {/* Mobile: hamburger button */}
+            {/* Auth button (desktop) */}
+            {!authLoading && (
+              <div className="hidden sm:block">
+                {user ? (
+                  <button
+                    onClick={() => signOut()}
+                    className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    Wyloguj się
+                  </button>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    Zaloguj się
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {/* Mobile: hamburger button */}
+            {(navLinks.length > 0 || !authLoading) && (
               <button
                 className="sm:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                 onClick={() => setMenuOpen((o) => !o)}
@@ -69,13 +94,13 @@ export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5x
                   </svg>
                 )}
               </button>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       {/* Mobile slide-down menu */}
-      {navLinks.length > 0 && menuOpen && (
+      {menuOpen && (
         <div className="sm:hidden border-t border-gray-100">
           <div className="px-2 py-2 space-y-0.5">
             {navLinks.map(({ href, label }) => (
@@ -88,6 +113,24 @@ export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5x
                 {label}
               </Link>
             ))}
+            {!authLoading && (
+              user ? (
+                <button
+                  onClick={() => { signOut(); setMenuOpen(false); }}
+                  className="block w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                >
+                  Wyloguj się
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                >
+                  Zaloguj się
+                </Link>
+              )
+            )}
           </div>
         </div>
       )}
