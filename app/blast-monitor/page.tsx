@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/config';
-import { useAuth } from '@/contexts/AuthContext';
-import { NavBar } from '@/components/layout/NavBar';
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { firestore } from "@/lib/firebase/config";
+import { useAuth } from "@/contexts/AuthContext";
+import { NavBar } from "@/components/layout/NavBar";
 
-const ADMIN_EMAIL = 'adborowski@gmail.com';
+const ADMIN_EMAIL = "adborowski@gmail.com";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,23 +39,45 @@ interface BigBlastData {
   entries: BigBlastEntry[];
 }
 
+interface EditorBlastEntry {
+  name: string;
+  email: string;
+  outlet: string | null;
+  sentAt: string;
+  id?: string;
+  error?: boolean;
+}
+
+interface EditorBlastData {
+  totalEditors: number;
+  entries: EditorBlastEntry[];
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('pl-PL', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+  return new Date(iso).toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
 function formatShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+  return new Date(iso).toLocaleDateString("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+  });
 }
 
 function statusBadge(sent: number, total: number) {
-  if (sent === 0) return { label: 'Nie rozpoczęto', color: 'bg-gray-100 text-gray-600' };
-  if (sent >= total) return { label: 'Ukończono', color: 'bg-green-100 text-green-700' };
-  return { label: 'W trakcie', color: 'bg-blue-100 text-blue-700' };
+  if (sent === 0)
+    return { label: "Nie rozpoczęto", color: "bg-gray-100 text-gray-600" };
+  if (sent >= total)
+    return { label: "Ukończono", color: "bg-green-100 text-green-700" };
+  return { label: "W trakcie", color: "bg-blue-100 text-blue-700" };
 }
 
 function getDailyCounts(entries: BigBlastEntry[]) {
@@ -64,16 +86,34 @@ function getDailyCounts(entries: BigBlastEntry[]) {
     const day = e.sentAt.slice(0, 10);
     counts[day] = (counts[day] ?? 0) + 1;
   }
-  return Object.entries(counts).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
+  return Object.entries(counts)
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .slice(0, 7);
 }
 
 function estimatedCompletion(remaining: number, dailyRate: number) {
-  if (remaining <= 0) return 'Gotowe';
-  if (dailyRate === 0) return '—';
+  if (remaining <= 0) return "Gotowe";
+  if (dailyRate === 0) return "—";
   const days = Math.ceil(remaining / dailyRate);
   const date = new Date();
   date.setDate(date.getDate() + days);
-  return date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' });
+  return date.toLocaleDateString("pl-PL", { day: "numeric", month: "long" });
+}
+
+// Editor blast cron: 0 * * * * — fires at the top of every hour
+function nextEditorBlastRun() {
+  const now = new Date();
+  const nextRun = new Date(now);
+  nextRun.setUTCMinutes(0, 0, 0);
+  nextRun.setUTCHours(nextRun.getUTCHours() + 1);
+  const diffMs = nextRun.getTime() - now.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+  const timeStr = nextRun.toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
+  return { countdown: `${diffMins} min.`, timeStr };
 }
 
 // Small blast cron: 0 */4 * * * — fires at 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC
@@ -92,7 +132,11 @@ function nextSmallBlastRun() {
   const diffMins = Math.round(diffMs / 60000);
   const h = Math.floor(diffMins / 60);
   const m = diffMins % 60;
-  const timeStr = nextRun.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+  const timeStr = nextRun.toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
   const countdown = h > 0 ? `${h} godz. ${m} min.` : `${m} min.`;
   return { countdown, timeStr };
 }
@@ -102,17 +146,20 @@ function nextSmallBlastRun() {
 export default function BlastMonitorPage() {
   const { user, loading: authLoading } = useAuth();
   const [small, setSmall] = useState<SmallBlastData | null>(null);
-  const [big, setBig]     = useState<BigBlastData | null>(null);
+  const [big, setBig] = useState<BigBlastData | null>(null);
+  const [editors, setEditors] = useState<EditorBlastData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     if (!user || user.email !== ADMIN_EMAIL) return;
     Promise.all([
-      getDoc(doc(firestore, 'blast_progress', 'small_blast')),
-      getDoc(doc(firestore, 'blast_progress', 'big_blast')),
-    ]).then(([s, b]) => {
+      getDoc(doc(firestore, "blast_progress", "small_blast")),
+      getDoc(doc(firestore, "blast_progress", "big_blast")),
+      getDoc(doc(firestore, "blast_progress", "editor_blast")),
+    ]).then(([s, b, e]) => {
       setSmall(s.exists() ? (s.data() as SmallBlastData) : { sent: [] });
       setBig(b.exists() ? (b.data() as BigBlastData) : null);
+      setEditors(e.exists() ? (e.data() as EditorBlastData) : null);
       setDataLoading(false);
     });
   }, [user]);
@@ -154,22 +201,29 @@ export default function BlastMonitorPage() {
   }
 
   // ── Small blast data ────────────────────────────────────────────────────────
-  const smallSent  = small?.sent ?? [];
+  const smallSent = small?.sent ?? [];
   const smallTotal = 18;
   const smallBadge = statusBadge(smallSent.length, smallTotal);
-  const smallPct   = Math.round((smallSent.length / smallTotal) * 100);
-  const nextRun    = nextSmallBlastRun();
+  const smallPct = Math.round((smallSent.length / smallTotal) * 100);
+  const nextRun = nextSmallBlastRun();
 
   // ── Big blast data ──────────────────────────────────────────────────────────
-  const bigEntries  = big?.entries ?? [];
-  const bigTotal    = big?.totalWithEmail ?? 0;
-  const bigBadge    = statusBadge(bigEntries.length, bigTotal);
-  const bigPct      = bigTotal > 0 ? Math.round((bigEntries.length / bigTotal) * 100) : 0;
+  const bigEntries = big?.entries ?? [];
+  const bigTotal = big?.totalWithEmail ?? 0;
+  const bigBadge = statusBadge(bigEntries.length, bigTotal);
+  const nextEditorRun = nextEditorBlastRun();
+  const bigPct =
+    bigTotal > 0 ? Math.round((bigEntries.length / bigTotal) * 100) : 0;
   const dailyCounts = getDailyCounts(bigEntries);
-  const recentBig   = [...bigEntries].sort((a, b) => b.sentAt.localeCompare(a.sentAt)).slice(0, 10);
-  const avgPerDay   = dailyCounts.length > 0
-    ? Math.round(dailyCounts.reduce((s, [, c]) => s + c, 0) / dailyCounts.length)
-    : 15;
+  const recentBig = [...bigEntries]
+    .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
+    .slice(0, 10);
+  const avgPerDay =
+    dailyCounts.length > 0
+      ? Math.round(
+          dailyCounts.reduce((s, [, c]) => s + c, 0) / dailyCounts.length,
+        )
+      : 15;
   const bigEst = estimatedCompletion(bigTotal - bigEntries.length, avgPerDay);
 
   return (
@@ -177,19 +231,24 @@ export default function BlastMonitorPage() {
       <NavBar backHref="/" subtitle="Blast Monitor" maxWidth="max-w-4xl" />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-
         {/* ── Small blast card ─────────────────────────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Small Blast</h2>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${smallBadge.color}`}>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Blast A - Domain Warmup
+            </h2>
+            <span
+              className={`text-xs font-medium px-2.5 py-1 rounded-full ${smallBadge.color}`}
+            >
               {smallBadge.label}
             </span>
           </div>
 
           {/* Progress bar */}
           <div className="mb-1 flex justify-between text-sm text-gray-500">
-            <span>{smallSent.length} / {smallTotal} wysłanych</span>
+            <span>
+              {smallSent.length} / {smallTotal} wysłanych
+            </span>
             <span>{smallPct}%</span>
           </div>
           <div className="w-full bg-gray-100 rounded-full h-2 mb-5">
@@ -200,14 +259,24 @@ export default function BlastMonitorPage() {
           </div>
 
           <p className="text-xs text-gray-400 mb-4">
-            Uruchamia się automatycznie co 4 godziny przez GitHub Actions (workflow: <code>small-blast.yml</code>).
+            Uruchamia się automatycznie co 4 godziny przez GitHub Actions
+            (workflow: <code>small-blast.yml</code>).
             {smallSent.length < smallTotal && (
-              <> Następna wysyłka za <span className="font-medium text-gray-600">{nextRun.countdown}</span> (ok. {nextRun.timeStr} UTC).</>
+              <>
+                {" "}
+                Następna wysyłka za{" "}
+                <span className="font-medium text-gray-600">
+                  {nextRun.countdown}
+                </span>{" "}
+                (ok. {nextRun.timeStr} UTC).
+              </>
             )}
           </p>
 
           {smallSent.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">Brak wysłanych wiadomości.</p>
+            <p className="text-sm text-gray-400 italic">
+              Brak wysłanych wiadomości.
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -223,13 +292,18 @@ export default function BlastMonitorPage() {
                   {smallSent.map((e, i) => (
                     <tr key={i}>
                       <td className="py-2 text-gray-700">{e.name}</td>
-                      <td className="py-2 text-gray-500">{formatDate(e.sentAt)}</td>
-                      <td className="py-2 font-mono text-xs text-gray-400">{e.variantKey}</td>
+                      <td className="py-2 text-gray-500">
+                        {formatDate(e.sentAt)}
+                      </td>
+                      <td className="py-2 font-mono text-xs text-gray-400">
+                        {e.variantKey}
+                      </td>
                       <td className="py-2">
-                        {e.error
-                          ? <span className="text-red-500 text-xs">✗ Błąd</span>
-                          : <span className="text-green-600 text-xs">✓ OK</span>
-                        }
+                        {e.error ? (
+                          <span className="text-red-500 text-xs">✗ Błąd</span>
+                        ) : (
+                          <span className="text-green-600 text-xs">✓ OK</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -239,22 +313,119 @@ export default function BlastMonitorPage() {
           )}
         </div>
 
-        {/* ── Big blast card ───────────────────────────────────────────── */}
+        {/* ── Editors blast card (Blast B) ─────────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Big Blast (posłowie)</h2>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${bigBadge.color}`}>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Blast B - Redakcje
+            </h2>
+            <span
+              className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusBadge(editors?.entries.length ?? 0, editors?.totalEditors ?? 0).color}`}
+            >
+              {statusBadge(editors?.entries.length ?? 0, editors?.totalEditors ?? 0).label}
+            </span>
+          </div>
+
+          {!editors ? (
+            <p className="text-sm text-gray-400 italic">
+              Blast nie został jeszcze uruchomiony.
+            </p>
+          ) : (
+            <>
+              <div className="mb-1 flex justify-between text-sm text-gray-500">
+                <span>
+                  {editors.entries.length} / {editors.totalEditors} wysłanych
+                </span>
+                <span>
+                  {editors.totalEditors > 0
+                    ? Math.round((editors.entries.length / editors.totalEditors) * 100)
+                    : 0}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all"
+                  style={{
+                    width: `${editors.totalEditors > 0 ? Math.round((editors.entries.length / editors.totalEditors) * 100) : 0}%`,
+                  }}
+                />
+              </div>
+
+              {editors.entries.length < editors.totalEditors && (
+                <p className="text-xs text-gray-400 mb-5">
+                  Uruchamia się automatycznie co godzinę przez GitHub Actions
+                  (workflow: <code>editor-blast.yml</code>). Następna wysyłka za{" "}
+                  <span className="font-medium text-gray-600">
+                    {nextEditorRun.countdown}
+                  </span>{" "}
+                  (ok. {nextEditorRun.timeStr} UTC).
+                </p>
+              )}
+
+              {editors.entries.length > 0 && (
+                <>
+                  <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+                    Ostatnie wysyłki
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                          <th className="pb-2 font-medium">Redakcja</th>
+                          <th className="pb-2 font-medium">Email</th>
+                          <th className="pb-2 font-medium">Data wysyłki</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {[...editors.entries]
+                          .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
+                          .slice(0, 10)
+                          .map((e, i) => (
+                            <tr key={i}>
+                              <td className="py-2 text-gray-700">
+                                {e.outlet ?? "—"}
+                              </td>
+                              <td className="py-2 text-gray-500 text-xs">
+                                {e.email}
+                              </td>
+                              <td className="py-2 text-gray-500">
+                                {formatDate(e.sentAt)}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── MEP blast card (Blast C, on hold) ────────────────────────── */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Blast C - Posłowie (wstrzymany)
+            </h2>
+            <span
+              className={`text-xs font-medium px-2.5 py-1 rounded-full ${bigBadge.color}`}
+            >
               {bigBadge.label}
             </span>
           </div>
 
           {bigTotal === 0 ? (
-            <p className="text-sm text-gray-400 italic">Blast nie został jeszcze uruchomiony.</p>
+            <p className="text-sm text-gray-400 italic">
+              Blast nie został jeszcze uruchomiony.
+            </p>
           ) : (
             <>
               {/* Progress bar */}
               <div className="mb-1 flex justify-between text-sm text-gray-500">
-                <span>{bigEntries.length} / {bigTotal} wysłanych</span>
+                <span>
+                  {bigEntries.length} / {bigTotal} wysłanych
+                </span>
                 <span>{bigPct}%</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
@@ -264,8 +435,9 @@ export default function BlastMonitorPage() {
                 />
               </div>
               <p className="text-xs text-gray-400 mb-5">
-                Szacowane zakończenie: <span className="font-medium text-gray-600">{bigEst}</span>
-                {' '}· Średnia dzienna: {avgPerDay} wiadomości
+                Szacowane zakończenie:{" "}
+                <span className="font-medium text-gray-600">{bigEst}</span> ·
+                Średnia dzienna: {avgPerDay} wiadomości
               </p>
 
               {/* Daily counts */}
@@ -276,9 +448,16 @@ export default function BlastMonitorPage() {
                   </h3>
                   <div className="flex gap-2 flex-wrap">
                     {dailyCounts.map(([day, count]) => (
-                      <div key={day} className="bg-gray-50 rounded px-3 py-1.5 text-center">
-                        <div className="text-xs text-gray-400">{formatShortDate(day)}</div>
-                        <div className="text-sm font-semibold text-gray-700">{count}</div>
+                      <div
+                        key={day}
+                        className="bg-gray-50 rounded px-3 py-1.5 text-center"
+                      >
+                        <div className="text-xs text-gray-400">
+                          {formatShortDate(day)}
+                        </div>
+                        <div className="text-sm font-semibold text-gray-700">
+                          {count}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -304,8 +483,12 @@ export default function BlastMonitorPage() {
                         {recentBig.map((e, i) => (
                           <tr key={i}>
                             <td className="py-2 text-gray-700">{e.fullName}</td>
-                            <td className="py-2 text-gray-500 text-xs">{e.club}</td>
-                            <td className="py-2 text-gray-500">{formatDate(e.sentAt)}</td>
+                            <td className="py-2 text-gray-500 text-xs">
+                              {e.club}
+                            </td>
+                            <td className="py-2 text-gray-500">
+                              {formatDate(e.sentAt)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -316,7 +499,6 @@ export default function BlastMonitorPage() {
             </>
           )}
         </div>
-
       </main>
     </div>
   );

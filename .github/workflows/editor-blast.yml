@@ -1,7 +1,9 @@
-name: Big Email Blast (MEPs)
+name: Editor Email Blast
 
 on:
-  workflow_dispatch:   # on hold — start after editor blast completes
+  schedule:
+    - cron: '0 * * * *'   # every hour — 1 email per run, ~40 hours total
+  workflow_dispatch:
 
 jobs:
   send:
@@ -32,7 +34,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           UNSUBSCRIBE_SECRET: ${{ secrets.UNSUBSCRIBE_SECRET }}
-        run: node scripts/sendBigBlast.js --limit 1
+        run: node scripts/sendEditorBlast.js --limit 1
 
       - name: Cleanup
         if: always()
@@ -41,5 +43,5 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          echo "⚠️ Big blast step failed!"
+          echo "⚠️ Editor blast step failed!"
           echo "Check the logs at: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
