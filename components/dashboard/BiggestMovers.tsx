@@ -27,7 +27,7 @@ function MoverRow({ entry, direction }: { entry: MoverEntry; direction: 'up' | '
 
       {/* Photo */}
       <div className="relative w-9 h-9 flex-shrink-0 rounded-full overflow-hidden bg-gray-200">
-        <Image src={photoUrl} alt={entry.fullName} fill className="object-cover" sizes="36px" />
+        <Image src={photoUrl} alt={entry.fullName} fill className="object-cover" sizes="36px" unoptimized />
       </div>
 
       {/* Name + club */}

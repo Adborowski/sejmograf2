@@ -12,6 +12,7 @@
     "big-blast": "node scripts/sendBigBlast.js"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.6.1",
     "firebase": "^12.9.0",
     "firebase-admin": "^13.6.1",
     "next": "16.1.6",

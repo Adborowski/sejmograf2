@@ -63,6 +63,7 @@ export default function MepStatsPage({ params }: { params: Promise<{ id: string 
                       fill
                       className="object-cover"
                       sizes="96px"
+                      unoptimized
                       onError={() => setPhotoState(photoState === 'big' ? 'small' : 'error')}
                     />
                   ) : (

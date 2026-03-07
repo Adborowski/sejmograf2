@@ -225,7 +225,14 @@ async function main() {
   const validated  = toSend.filter((_, i) => mxResults[i]);
   const skipped    = toSend.filter((_, i) => !mxResults[i]);
   if (skipped.length > 0) {
-    skipped.forEach(e => console.log(`  ${colors.yellow}⚠ No MX — skipping ${e.email}${colors.reset}`));
+    for (const editor of skipped) {
+      console.log(`  ${colors.yellow}⚠ No MX — skipping ${editor.email}${colors.reset}`);
+      if (!DRY_RUN) {
+        // Write to Firestore so this address is never retried
+        const entry = { name: editor.name, email: editor.email, outlet: editor.outlet ?? null, sentAt: new Date().toISOString(), skipped: true, skipReason: 'no_mx' };
+        await writeFirestoreEntry(db, entry, editors.length);
+      }
+    }
   }
   console.log(`${colors.green}✓ ${validated.length} addresses pass MX check (${skipped.length} skipped)${colors.reset}\n`);
 

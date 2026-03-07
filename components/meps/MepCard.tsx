@@ -41,6 +41,7 @@ export default function MepCard({ mep, clubColor }: MepCardProps) {
                 className="object-cover"
                 onError={() => setPhotoState(photoState === 'big' ? 'small' : 'error')}
                 sizes="64px"
+                unoptimized
               />
             ) : (
               <div className="flex items-center justify-center h-full bg-gray-300 text-gray-600">

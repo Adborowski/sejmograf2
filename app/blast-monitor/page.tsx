@@ -46,6 +46,8 @@ interface EditorBlastEntry {
   sentAt: string;
   id?: string;
   error?: boolean;
+  skipped?: boolean;
+  skipReason?: string;
 }
 
 interface EditorBlastData {
@@ -62,6 +64,7 @@ function formatDate(iso: string) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Warsaw",
   });
 }
 
@@ -69,6 +72,7 @@ function formatShortDate(iso: string) {
   return new Date(iso).toLocaleDateString("pl-PL", {
     day: "2-digit",
     month: "2-digit",
+    timeZone: "Europe/Warsaw",
   });
 }
 
@@ -111,7 +115,7 @@ function nextEditorBlastRun() {
   const timeStr = nextRun.toLocaleTimeString("pl-PL", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: "Europe/Warsaw",
   });
   return { countdown: `${diffMins} min.`, timeStr };
 }
@@ -135,7 +139,7 @@ function nextSmallBlastRun() {
   const timeStr = nextRun.toLocaleTimeString("pl-PL", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: "Europe/Warsaw",
   });
   const countdown = h > 0 ? `${h} godz. ${m} min.` : `${m} min.`;
   return { countdown, timeStr };
@@ -149,6 +153,9 @@ export default function BlastMonitorPage() {
   const [big, setBig] = useState<BigBlastData | null>(null);
   const [editors, setEditors] = useState<EditorBlastData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const [smallOpen, setSmallOpen] = useState(true);
+  const [editorsOpen, setEditorsOpen] = useState(true);
+  const [bigOpen, setBigOpen] = useState(true);
 
   useEffect(() => {
     if (!user || user.email !== ADMIN_EMAIL) return;
@@ -233,100 +240,122 @@ export default function BlastMonitorPage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* ── Small blast card ─────────────────────────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Blast A - Domain Warmup
-            </h2>
-            <span
-              className={`text-xs font-medium px-2.5 py-1 rounded-full ${smallBadge.color}`}
-            >
+          <button
+            onClick={() => setSmallOpen((o) => !o)}
+            className="flex items-center justify-between w-full text-left mb-4"
+          >
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Blast A - Domain Warmup
+              </h2>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${smallOpen ? "" : "-rotate-90"}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${smallBadge.color}`}>
               {smallBadge.label}
             </span>
-          </div>
+          </button>
 
-          {/* Progress bar */}
-          <div className="mb-1 flex justify-between text-sm text-gray-500">
-            <span>
-              {smallSent.length} / {smallTotal} wysłanych
-            </span>
-            <span>{smallPct}%</span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-2 mb-5">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${smallPct}%` }}
-            />
-          </div>
+          {smallOpen && (
+            <>
+              {/* Progress bar */}
+              <div className="mb-1 flex justify-between text-sm text-gray-500">
+                <span>
+                  {smallSent.length} / {smallTotal} wysłanych
+                </span>
+                <span>{smallPct}%</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2 mb-5">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all"
+                  style={{ width: `${smallPct}%` }}
+                />
+              </div>
 
-          <p className="text-xs text-gray-400 mb-4">
-            Uruchamia się automatycznie co 4 godziny przez GitHub Actions
-            (workflow: <code>small-blast.yml</code>).
-            {smallSent.length < smallTotal && (
-              <>
-                {" "}
-                Następna wysyłka za{" "}
-                <span className="font-medium text-gray-600">
-                  {nextRun.countdown}
-                </span>{" "}
-                (ok. {nextRun.timeStr} UTC).
-              </>
-            )}
-          </p>
+              <p className="text-xs text-gray-400 mb-4">
+                Uruchamia się automatycznie co 4 godziny przez GitHub Actions
+                (workflow: <code>small-blast.yml</code>).
+                {smallSent.length < smallTotal && (
+                  <>
+                    {" "}
+                    Następna wysyłka za{" "}
+                    <span className="font-medium text-gray-600">
+                      {nextRun.countdown}
+                    </span>{" "}
+                    (ok. {nextRun.timeStr}).
+                  </>
+                )}
+              </p>
 
-          {smallSent.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">
-              Brak wysłanych wiadomości.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
-                    <th className="pb-2 font-medium">Odbiorca</th>
-                    <th className="pb-2 font-medium">Data wysyłki</th>
-                    <th className="pb-2 font-medium">Wariant</th>
-                    <th className="pb-2 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {smallSent.map((e, i) => (
-                    <tr key={i}>
-                      <td className="py-2 text-gray-700">{e.name}</td>
-                      <td className="py-2 text-gray-500">
-                        {formatDate(e.sentAt)}
-                      </td>
-                      <td className="py-2 font-mono text-xs text-gray-400">
-                        {e.variantKey}
-                      </td>
-                      <td className="py-2">
-                        {e.error ? (
-                          <span className="text-red-500 text-xs">✗ Błąd</span>
-                        ) : (
-                          <span className="text-green-600 text-xs">✓ OK</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              {smallSent.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">
+                  Brak wysłanych wiadomości.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                        <th className="pb-2 font-medium">Odbiorca</th>
+                        <th className="pb-2 font-medium">Data wysyłki</th>
+                        <th className="pb-2 font-medium">Wariant</th>
+                        <th className="pb-2 font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {smallSent.map((e, i) => (
+                        <tr key={i}>
+                          <td className="py-2 text-gray-700">{e.name}</td>
+                          <td className="py-2 text-gray-500">
+                            {formatDate(e.sentAt)}
+                          </td>
+                          <td className="py-2 font-mono text-xs text-gray-400">
+                            {e.variantKey}
+                          </td>
+                          <td className="py-2">
+                            {e.error ? (
+                              <span className="text-red-500 text-xs">✗ Błąd</span>
+                            ) : (
+                              <span className="text-green-600 text-xs">✓ OK</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
         </div>
 
         {/* ── Editors blast card (Blast B) ─────────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Blast B - Redakcje
-            </h2>
-            <span
-              className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusBadge(editors?.entries.length ?? 0, editors?.totalEditors ?? 0).color}`}
-            >
+          <button
+            onClick={() => setEditorsOpen((o) => !o)}
+            className="flex items-center justify-between w-full text-left mb-4"
+          >
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Blast B - Redakcje
+              </h2>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${editorsOpen ? "" : "-rotate-90"}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusBadge(editors?.entries.length ?? 0, editors?.totalEditors ?? 0).color}`}>
               {statusBadge(editors?.entries.length ?? 0, editors?.totalEditors ?? 0).label}
             </span>
-          </div>
+          </button>
 
-          {!editors ? (
+          {editorsOpen && (!editors ? (
             <p className="text-sm text-gray-400 italic">
               Blast nie został jeszcze uruchomiony.
             </p>
@@ -358,7 +387,7 @@ export default function BlastMonitorPage() {
                   <span className="font-medium text-gray-600">
                     {nextEditorRun.countdown}
                   </span>{" "}
-                  (ok. {nextEditorRun.timeStr} UTC).
+                  (ok. {nextEditorRun.timeStr}).
                 </p>
               )}
 
@@ -374,6 +403,7 @@ export default function BlastMonitorPage() {
                           <th className="pb-2 font-medium">Redakcja</th>
                           <th className="pb-2 font-medium">Email</th>
                           <th className="pb-2 font-medium">Data wysyłki</th>
+                          <th className="pb-2 font-medium">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
@@ -391,6 +421,15 @@ export default function BlastMonitorPage() {
                               <td className="py-2 text-gray-500">
                                 {formatDate(e.sentAt)}
                               </td>
+                              <td className="py-2">
+                                {e.skipped ? (
+                                  <span className="text-yellow-600 text-xs">⚠ Brak MX</span>
+                                ) : e.error ? (
+                                  <span className="text-red-500 text-xs">✗ Błąd</span>
+                                ) : (
+                                  <span className="text-green-600 text-xs">✓ OK</span>
+                                )}
+                              </td>
                             </tr>
                           ))}
                       </tbody>
@@ -399,23 +438,32 @@ export default function BlastMonitorPage() {
                 </>
               )}
             </>
-          )}
+          ))}
         </div>
 
         {/* ── MEP blast card (Blast C, on hold) ────────────────────────── */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Blast C - Posłowie (wstrzymany)
-            </h2>
-            <span
-              className={`text-xs font-medium px-2.5 py-1 rounded-full ${bigBadge.color}`}
-            >
+          <button
+            onClick={() => setBigOpen((o) => !o)}
+            className="flex items-center justify-between w-full text-left mb-4"
+          >
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Blast C - Posłowie (wstrzymany)
+              </h2>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${bigOpen ? "" : "-rotate-90"}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${bigBadge.color}`}>
               {bigBadge.label}
             </span>
-          </div>
+          </button>
 
-          {bigTotal === 0 ? (
+          {bigOpen && (bigTotal === 0 ? (
             <p className="text-sm text-gray-400 italic">
               Blast nie został jeszcze uruchomiony.
             </p>
@@ -497,7 +545,7 @@ export default function BlastMonitorPage() {
                 </>
               )}
             </>
-          )}
+          ))}
         </div>
       </main>
     </div>

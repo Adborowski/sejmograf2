@@ -50,7 +50,7 @@ export function MepRankRow({
         {rank}
       </span>
       <div className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-gray-200">
-        <Image src={photoUrl} alt={mep.fullName} fill className="object-cover" sizes="40px" />
+        <Image src={photoUrl} alt={mep.fullName} fill className="object-cover" sizes="40px" unoptimized />
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-gray-900 truncate text-sm">{mep.fullName}</p>
