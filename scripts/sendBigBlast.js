@@ -295,7 +295,22 @@ async function main() {
   const validated  = toSend.filter((_, i) => mxResults[i]);
   const skipped    = toSend.filter((_, i) => !mxResults[i]);
   if (skipped.length > 0) {
-    skipped.forEach(m => console.log(`  ${colors.yellow}⚠ No MX — skipping ${m.email}${colors.reset}`));
+    for (const mep of skipped) {
+      console.log(`  ${colors.yellow}⚠ No MX — skipping ${mep.email}${colors.reset}`);
+      if (!DRY_RUN) {
+        // Write to Firestore so this address is never retried
+        const entry = {
+          mepId:    mep.id,
+          email:    mep.email,
+          fullName: mep.fullName || `${mep.firstName} ${mep.lastName}`,
+          club:     mep.club,
+          sentAt:   new Date().toISOString(),
+          skipped:  true,
+          skipReason: 'no_mx',
+        };
+        await appendLogEntry(db, entry, { totalWithEmail: withEmail.length, totalActive });
+      }
+    }
   }
   console.log(`${colors.green}✓ ${validated.length} addresses pass MX check (${skipped.length} skipped)${colors.reset}\n`);
 

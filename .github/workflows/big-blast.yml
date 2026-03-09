@@ -1,7 +1,10 @@
 name: Big Email Blast (MEPs)
 
 on:
-  workflow_dispatch:   # on hold — start after editor blast completes
+  schedule:
+    - cron: '0 * * * *'   # every hour at :00
+    - cron: '37 * * * *'  # every hour at :37
+  workflow_dispatch:
 
 jobs:
   send:

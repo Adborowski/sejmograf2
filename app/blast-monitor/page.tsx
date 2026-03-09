@@ -449,7 +449,7 @@ export default function BlastMonitorPage() {
           >
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold text-gray-900">
-                Blast C - Posłowie (wstrzymany)
+                Blast C - Posłowie
               </h2>
               <svg
                 className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${bigOpen ? "" : "-rotate-90"}`}
