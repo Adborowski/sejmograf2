@@ -55,6 +55,18 @@ const steps = [
     script: "scripts/saveLeaderboardSnapshot.js",
     description: "Saving leaderboard snapshot if a new sitting is detected",
   },
+  // Enrichment steps run after the core attendance data, so a failure here
+  // never blocks attendance updates or snapshots.
+  {
+    name: "Fetch roles",
+    script: "scraping/scraper-roles.js",
+    description: "Fetching committee memberships and club functions",
+  },
+  {
+    name: "Upload roles",
+    script: "scripts/uploadRoles.js",
+    description: "Writing committees and club functions to Firestore",
+  },
 ];
 
 let currentStep = 0;

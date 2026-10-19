@@ -11,6 +11,18 @@ export interface VotingStat {
 }
 
 /**
+ * A committee seat held by an MEP (written by scraper-roles.js)
+ */
+export interface CommitteeMembership {
+  code: string;
+  name: string;
+  type: 'STANDING' | 'EXTRAORDINARY' | 'INVESTIGATIVE';
+  role: 'chair' | 'deputy' | 'member';
+  function: string | null; // gendered Polish title, e.g. "przewodnicząca"
+  joinDate: string | null;
+}
+
+/**
  * Member of European Parliament (MEP) data structure
  */
 export interface Mep {
@@ -45,6 +57,10 @@ export interface Mep {
   totalMissed?: number;
   totalVotings?: number;
   attendanceRate?: number | null; // 0-1 range, null if no data
+
+  // Roles
+  committees?: CommitteeMembership[];
+  clubFunction?: string | null;
 
   // Metadata
   updatedAt?: any; // Firestore Timestamp

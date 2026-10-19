@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { FaSatelliteDish } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
+import { FEATURES } from '@/lib/features';
 
 interface NavBarProps {
   subtitle?: string;
@@ -15,6 +16,7 @@ interface NavBarProps {
 export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5xl' }: NavBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, signOut, loading: authLoading } = useAuth();
+  const showAuth = FEATURES.reviews && !authLoading;
 
   return (
     <nav className="bg-white shadow-sm">
@@ -57,7 +59,7 @@ export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5x
             )}
 
             {/* Auth button (desktop) */}
-            {!authLoading && (
+            {showAuth && (
               <div className="hidden sm:block">
                 {user ? (
                   <button
@@ -78,7 +80,7 @@ export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5x
             )}
 
             {/* Mobile: hamburger button */}
-            {(navLinks.length > 0 || !authLoading) && (
+            {(navLinks.length > 0 || showAuth) && (
               <button
                 className="sm:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                 onClick={() => setMenuOpen((o) => !o)}
@@ -113,7 +115,7 @@ export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5x
                 {label}
               </Link>
             ))}
-            {!authLoading && (
+            {showAuth && (
               user ? (
                 <button
                   onClick={() => { signOut(); setMenuOpen(false); }}

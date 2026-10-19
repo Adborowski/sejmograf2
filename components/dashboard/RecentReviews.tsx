@@ -22,6 +22,8 @@ export function RecentReviews({ getMepName }: { getMepName: (id: number) => stri
     let cancelled = false;
     getRecentReviews(5)
       .then((data) => { if (!cancelled) setReviews(data); })
+      // Non-critical widget: hide it rather than surface an error
+      .catch((err) => console.warn('Failed to load recent reviews:', err))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);

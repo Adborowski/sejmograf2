@@ -8,6 +8,7 @@ import { ClubCards } from "@/components/leaderboard/ClubCards";
 import { MepRankRow } from "@/components/leaderboard/MepRankRow";
 import { BiggestMovers } from "@/components/dashboard/BiggestMovers";
 import { RecentReviews } from "@/components/dashboard/RecentReviews";
+import { FEATURES } from "@/lib/features";
 import { useLatestSittingDate } from "@/hooks/useLatestSittingDate";
 
 const LEADERBOARD_SIZE = 20;
@@ -64,7 +65,7 @@ export default function LeaderboardPage() {
           <p className="text-blue-100 text-base leading-relaxed max-w-2xl">
             Sejmograf śledzi obecność wszystkich posłów na głosowaniach
             sejmowych. Sprawdź, kto pojawia się regularnie, a kto opuszcza
-            posiedzenia — i wyraź swoją opinię.
+            posiedzenia{FEATURES.reviews ? ' — i wyraź swoją opinię' : ''}.
           </p>
           {date && sitting && (
             <p className="mt-4 text-xs text-blue-200">
@@ -166,7 +167,7 @@ export default function LeaderboardPage() {
 
         {/* Load independently */}
         <BiggestMovers />
-        <RecentReviews getMepName={getMepName} />
+        {FEATURES.reviews && <RecentReviews getMepName={getMepName} />}
       </main>
     </div>
   );

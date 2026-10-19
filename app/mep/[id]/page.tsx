@@ -8,6 +8,8 @@ import { getMepPhotoBigDirectURL, getMepPhotoDirectURL } from '@/lib/firebase/st
 import { VotingStat } from '@/types/mep';
 import { MepAttendanceChart } from '@/components/mep/MepAttendanceChart';
 import { ReviewsSection } from '@/components/mep/ReviewsSection';
+import { RolesSection } from '@/components/mep/RolesSection';
+import { FEATURES } from '@/lib/features';
 import { CLUB_COLOR_OVERRIDES, CLUB_LOGOS } from '@/lib/clubStyles';
 
 const capitalizeCompound = (str: string) =>
@@ -172,6 +174,8 @@ export default function MepStatsPage({ params }: { params: Promise<{ id: string 
                 </dl>
               </div>
 
+              <RolesSection committees={mep.committees} clubFunction={mep.clubFunction} club={mep.club} />
+
               {/* Overall Stats */}
               {overallRate !== null && (
                 <div className="grid grid-cols-3 gap-4 mb-6">
@@ -190,7 +194,7 @@ export default function MepStatsPage({ params }: { params: Promise<{ id: string 
                 </div>
               )}
 
-              <ReviewsSection mepId={mepId} />
+              {FEATURES.reviews && <ReviewsSection mepId={mepId} />}
 
               {/* Attendance chart */}
               {overallRate !== null && (
