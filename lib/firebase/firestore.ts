@@ -9,7 +9,7 @@ import {
   limit,
   QueryConstraint,
 } from 'firebase/firestore';
-import { LeaderboardSnapshot, LeaderboardSnapshotMeta } from '@/types/mep';
+import { LeaderboardSnapshot, LeaderboardSnapshotMeta, MinistryStat } from '@/types/mep';
 import { firestore } from './config';
 
 // Get Firestore instance
@@ -214,5 +214,18 @@ export const getClubStats = async (club: string) => {
     };
   } catch (error: any) {
     throw new Error(error.message || 'Failed to calculate club stats');
+  }
+};
+
+/**
+ * Ministry response ranking, written by scraper-questions.js (worst first)
+ */
+export const getMinistryStats = async (): Promise<{ computedOn: string; ministries: MinistryStat[] } | null> => {
+  try {
+    const docSnap = await getDoc(doc(db, 'stats', 'ministries'));
+    if (!docSnap.exists()) return null;
+    return docSnap.data() as { computedOn: string; ministries: MinistryStat[] };
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch ministry stats');
   }
 };

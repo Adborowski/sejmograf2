@@ -53,6 +53,7 @@ export default function LeaderboardPage() {
           { href: "/leaderboard", label: "Pełny ranking" },
           { href: "/clubs", label: "Przeglądaj kluby" },
           { href: "/search", label: "Szukaj posłów" },
+          { href: "/ministerstwa", label: "Ministerstwa" },
         ]}
       />
 

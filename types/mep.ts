@@ -23,6 +23,29 @@ export interface CommitteeMembership {
 }
 
 /**
+ * Interpellation + written question counts (written by scraper-questions.js)
+ */
+export interface MepActivity {
+  interpellations: number;
+  writtenQuestions: number;
+  firstAuthor: number; // items where the MEP is the first signatory
+  lastDate: string | null;
+  topRecipients: Array<{ name: string; count: number }>;
+}
+
+/**
+ * How one ministry answers MEPs' questions (stats/ministries)
+ */
+export interface MinistryStat {
+  name: string;
+  count: number;
+  answered: number;
+  unanswered: number;
+  onTimeShare: number; // 0–1, answered within the 21-day deadline
+  medianResponseDays: number | null;
+}
+
+/**
  * Member of European Parliament (MEP) data structure
  */
 export interface Mep {
@@ -61,6 +84,9 @@ export interface Mep {
   // Roles
   committees?: CommitteeMembership[];
   clubFunction?: string | null;
+
+  // Parliamentary questions
+  activity?: MepActivity;
 
   // Metadata
   updatedAt?: any; // Firestore Timestamp

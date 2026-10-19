@@ -67,6 +67,16 @@ const steps = [
     script: "scripts/uploadRoles.js",
     description: "Writing committees and club functions to Firestore",
   },
+  {
+    name: "Fetch questions",
+    script: "scraping/scraper-questions.js",
+    description: "Fetching interpellations and written questions",
+  },
+  {
+    name: "Upload activity",
+    script: "scripts/uploadActivity.js",
+    description: "Writing MEP activity and ministry response stats to Firestore",
+  },
 ];
 
 let currentStep = 0;
