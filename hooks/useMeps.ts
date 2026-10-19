@@ -1,14 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  getMepById,
-  getAllMeps,
-  getMepsByClub,
-  searchMepsByName,
-  getAllClubs,
-  getClubStats,
-} from '@/lib/firebase/firestore';
+import { getMepById, getAllMeps, getAllClubs, getMepList } from '@/lib/firebase/firestore';
+import { SittingTotals } from '@/types/mep';
 
 /**
  * Hook to fetch a single MEP by ID
@@ -50,6 +44,7 @@ export const useMeps = (options?: {
   limitCount?: number;
 }) => {
   const [meps, setMeps] = useState<any[]>([]);
+  const [sittings, setSittings] = useState<SittingTotals[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,9 +52,11 @@ export const useMeps = (options?: {
     setLoading(true);
     setError(null);
 
-    getAllMeps(options)
-      .then((data) => {
+    // Both resolve from the same cached stats/mep_list read
+    Promise.all([getAllMeps(options), getMepList()])
+      .then(([data, list]) => {
         setMeps(data);
+        setSittings(list.sittings);
         setLoading(false);
       })
       .catch((err) => {
@@ -68,38 +65,7 @@ export const useMeps = (options?: {
       });
   }, [options?.club, options?.active, options?.limitCount]);
 
-  return { meps, loading, error };
-};
-
-/**
- * Hook to fetch MEPs by political club
- */
-export const useMepsByClub = (club: string | null) => {
-  const [meps, setMeps] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!club) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    getMepsByClub(club)
-      .then((data) => {
-        setMeps(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [club]);
-
-  return { meps, loading, error };
+  return { meps, sittings, loading, error };
 };
 
 /**
@@ -126,35 +92,4 @@ export const useClubs = () => {
   }, []);
 
   return { clubs, loading, error };
-};
-
-/**
- * Hook to get aggregated stats for a club
- */
-export const useClubStats = (club: string | null) => {
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!club) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    getClubStats(club)
-      .then((data) => {
-        setStats(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [club]);
-
-  return { stats, loading, error };
 };

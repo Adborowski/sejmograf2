@@ -14,7 +14,7 @@ import { useLatestSittingDate } from "@/hooks/useLatestSittingDate";
 const LEADERBOARD_SIZE = 20;
 
 export default function LeaderboardPage() {
-  const { meps, loading, error } = useMeps();
+  const { meps, sittings, loading, error } = useMeps();
   const { sitting, date } = useLatestSittingDate();
 
   const activeSorted = [...meps]
@@ -162,7 +162,7 @@ export default function LeaderboardPage() {
               </Link>
             </div>
 
-            <AttendanceChart meps={meps} />
+            <AttendanceChart meps={meps} sittings={sittings} />
           </>
         )}
 

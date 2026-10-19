@@ -11,7 +11,7 @@ const ALL_SORTED_CLUBS = Object.keys(CLUB_FULL_NAMES).sort();
 const STATIC_COLOR_MAP = getClubColorMap(ALL_SORTED_CLUBS);
 
 export default function ClubBrowserPage() {
-  const { meps, loading, error } = useMeps();
+  const { meps, sittings, loading, error } = useMeps();
 
   const clubs = useMemo(() => {
     const map = new Map<string, { totalVoted: number; totalVotings: number; active: number; total: number }>();
@@ -54,7 +54,7 @@ export default function ClubBrowserPage() {
         </div>
 
         <div className="mb-8">
-          <AttendanceChart meps={meps} />
+          <AttendanceChart meps={meps} sittings={sittings} />
         </div>
 
         {loading ? (

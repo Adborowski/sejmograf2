@@ -93,6 +93,27 @@ export interface Mep {
 }
 
 /**
+ * Attendance totals for one sitting, overall and per club (stats/mep_list)
+ */
+export interface SittingTotals {
+  sitting: number;
+  date: string;
+  voted: number;
+  votings: number;
+  clubs: Record<string, [voted: number, votings: number]>;
+}
+
+/**
+ * Lightweight list used by list pages (stats/mep_list). Entries carry only
+ * the list fields of Mep — no votingStats, committees or activity.
+ */
+export interface MepList {
+  meps: Mep[];
+  sittings: SittingTotals[];
+  generatedAt: string;
+}
+
+/**
  * A single MEP's entry in a leaderboard snapshot
  */
 export interface LeaderboardEntry {

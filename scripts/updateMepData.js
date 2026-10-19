@@ -46,6 +46,11 @@ const steps = [
     description: "Uploading MEP data to Firestore",
   },
   {
+    name: "Upload list summary",
+    script: "scripts/uploadMepSummary.js",
+    description: "Writing the lightweight MEP list used by list pages",
+  },
+  {
     name: "Upload photos to Storage",
     script: "scripts/uploadToStorage.js",
     description: "Uploading MEP photos to Firebase Storage",

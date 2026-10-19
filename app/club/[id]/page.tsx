@@ -16,7 +16,7 @@ export default function ClubPage({ params }: { params: Promise<{ id: string }> }
   const club = decodeURIComponent(id);
 
   const { meps, loading, error } = useMeps({ club });
-  const { meps: allMeps } = useMeps();
+  const { meps: allMeps, sittings } = useMeps();
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
 
   const color = STATIC_COLOR_MAP[club] ?? '#3b82f6';
@@ -108,7 +108,7 @@ export default function ClubPage({ params }: { params: Promise<{ id: string }> }
             </div>
 
             <div className="mb-6">
-              <AttendanceChart meps={allMeps} initialVisible={[club]} />
+              <AttendanceChart meps={allMeps} sittings={sittings} initialVisible={[club]} />
             </div>
 
             {/* Ranked member list */}

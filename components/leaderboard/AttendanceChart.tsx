@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { getClubColorMap } from '@/lib/clubStyles';
+import { SittingTotals } from '@/types/mep';
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -37,39 +38,16 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-export function AttendanceChart({ meps, initialVisible }: { meps: any[]; initialVisible?: string[] }) {
+export function AttendanceChart({
+  meps,
+  sittings,
+  initialVisible,
+}: {
+  meps: any[];
+  sittings: SittingTotals[]; // pre-aggregated in the pipeline (stats/mep_list)
+  initialVisible?: string[];
+}) {
   const { chartData, clubs, clubColors } = useMemo(() => {
-    // Map: sitting -> aggregates for overall + each club
-    type SittingEntry = {
-      totalVoted: number;
-      totalVotings: number;
-      date: string;
-      clubs: Map<string, { totalVoted: number; totalVotings: number }>;
-    };
-    const sittingMap = new Map<number, SittingEntry>();
-
-    for (const mep of meps) {
-      if (!mep.votingStats) continue;
-      for (const [key, stat] of Object.entries(mep.votingStats as Record<string, any>)) {
-        const sitting = Number(key);
-        if (!sittingMap.has(sitting)) {
-          sittingMap.set(sitting, { totalVoted: 0, totalVotings: 0, date: stat.date ?? '', clubs: new Map() });
-        }
-        const entry = sittingMap.get(sitting)!;
-        entry.totalVoted += stat.numVoted || 0;
-        entry.totalVotings += stat.numVotings || 0;
-
-        if (mep.club) {
-          if (!entry.clubs.has(mep.club)) {
-            entry.clubs.set(mep.club, { totalVoted: 0, totalVotings: 0 });
-          }
-          const c = entry.clubs.get(mep.club)!;
-          c.totalVoted += stat.numVoted || 0;
-          c.totalVotings += stat.numVotings || 0;
-        }
-      }
-    }
-
     // Discover all clubs, sorted by name
     const clubSet = new Set<string>();
     for (const mep of meps) { if (mep.club) clubSet.add(mep.club); }
@@ -77,25 +55,23 @@ export function AttendanceChart({ meps, initialVisible }: { meps: any[]; initial
     const clubColors = getClubColorMap(clubs);
 
     // Build chart data points
-    const chartData = Array.from(sittingMap.entries())
-      .sort(([a], [b]) => a - b)
-      .flatMap(([sitting, data]) => {
-        if (data.totalVotings === 0) return [];
-        const point: Record<string, any> = {
-          sitting,
-          date: data.date,
-          overall: parseFloat(((data.totalVoted / data.totalVotings) * 100).toFixed(1)),
-        };
-        for (const [club, cd] of data.clubs) {
-          if (cd.totalVotings > 0) {
-            point[club] = parseFloat(((cd.totalVoted / cd.totalVotings) * 100).toFixed(1));
-          }
+    const chartData = sittings.flatMap((data) => {
+      if (data.votings === 0) return [];
+      const point: Record<string, any> = {
+        sitting: data.sitting,
+        date: data.date,
+        overall: parseFloat(((data.voted / data.votings) * 100).toFixed(1)),
+      };
+      for (const [club, [voted, votings]] of Object.entries(data.clubs)) {
+        if (votings > 0) {
+          point[club] = parseFloat(((voted / votings) * 100).toFixed(1));
         }
-        return [point];
-      });
+      }
+      return [point];
+    });
 
     return { chartData, clubs, clubColors };
-  }, [meps]);
+  }, [meps, sittings]);
 
   // hiddenClubs initialized to empty; populated once clubs load (async meps data).
   // useEffect avoids the stale-closure bug where useState initializer runs

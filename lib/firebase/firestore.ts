@@ -7,9 +7,8 @@ import {
   where,
   orderBy,
   limit,
-  QueryConstraint,
 } from 'firebase/firestore';
-import { LeaderboardSnapshot, LeaderboardSnapshotMeta, MinistryStat } from '@/types/mep';
+import { LeaderboardSnapshot, LeaderboardSnapshotMeta, MepList, MinistryStat } from '@/types/mep';
 import { firestore } from './config';
 
 // Get Firestore instance
@@ -33,80 +32,50 @@ export const getMepById = async (mepId: number) => {
 };
 
 /**
- * Get all MEPs (with optional filters)
+ * Lightweight list of all MEPs + per-sitting chart totals, from the single
+ * stats/mep_list doc written by uploadMepSummary.js. Fetched once per page load
+ * and shared by every caller. Full MEP docs (with votingStats) are only read
+ * on the MEP detail page.
+ */
+let mepListPromise: Promise<MepList> | null = null;
+
+export const getMepList = (): Promise<MepList> => {
+  mepListPromise ??= getDoc(doc(db, 'stats', 'mep_list'))
+    .then((snap) => {
+      if (!snap.exists()) throw new Error('Brak danych listy posłów');
+      const data = snap.data();
+      return { ...JSON.parse(data.json), generatedAt: data.generatedAt } as MepList;
+    })
+    .catch((error) => {
+      mepListPromise = null; // allow a retry on the next call
+      throw new Error(error.message || 'Failed to fetch MEP list');
+    });
+  return mepListPromise;
+};
+
+/**
+ * Get all MEPs (with optional filters), ordered by last name
  */
 export const getAllMeps = async (options?: {
   club?: string;
   active?: boolean;
   limitCount?: number;
 }) => {
-  try {
-    const constraints: QueryConstraint[] = [];
-
-    // Add filters
-    if (options?.club) {
-      constraints.push(where('club', '==', options.club));
-    }
-    if (options?.active !== undefined) {
-      constraints.push(where('active', '==', options.active));
-    }
-
-    // Add ordering
-    constraints.push(orderBy('lastName'));
-
-    // Add limit
-    if (options?.limitCount) {
-      constraints.push(limit(options.limitCount));
-    }
-
-    const q = query(collection(db, 'meps'), ...constraints);
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => doc.data());
-  } catch (error: any) {
-    throw new Error(error.message || 'Failed to fetch MEPs');
-  }
+  const { meps } = await getMepList();
+  const filtered = meps.filter(
+    (mep) =>
+      (options?.club === undefined || mep.club === options.club) &&
+      (options?.active === undefined || mep.active === options.active),
+  );
+  return options?.limitCount ? filtered.slice(0, options.limitCount) : filtered;
 };
 
 /**
- * Get MEPs by political party/club
- */
-export const getMepsByClub = async (club: string) => {
-  return getAllMeps({ club, active: true });
-};
-
-/**
- * Search MEPs by name
- */
-export const searchMepsByName = async (searchTerm: string) => {
-  try {
-    // Note: Firestore doesn't support full-text search
-    // This gets all MEPs and filters client-side
-    // For production, consider using Algolia or similar
-    const allMeps = await getAllMeps({ active: true });
-
-    const searchLower = searchTerm.toLowerCase();
-    return allMeps.filter((mep: any) =>
-      mep.firstName.toLowerCase().includes(searchLower) ||
-      mep.lastName.toLowerCase().includes(searchLower) ||
-      mep.fullName.toLowerCase().includes(searchLower)
-    );
-  } catch (error: any) {
-    throw new Error(error.message || 'Failed to search MEPs');
-  }
-};
-
-/**
- * Get unique list of political clubs
+ * Get unique list of political clubs (of active MEPs)
  */
 export const getAllClubs = async () => {
-  try {
-    const allMeps = await getAllMeps({ active: true });
-    const clubs = new Set(allMeps.map((mep: any) => mep.club));
-    return Array.from(clubs).sort();
-  } catch (error: any) {
-    throw new Error(error.message || 'Failed to fetch clubs');
-  }
+  const meps = await getAllMeps({ active: true });
+  return Array.from(new Set(meps.map((mep) => mep.club))).sort();
 };
 
 /**
@@ -175,45 +144,6 @@ export const getTwoLatestLeaderboardSnapshots = async (): Promise<[LeaderboardSn
     return [latest, previous];
   } catch (error: any) {
     throw new Error(error.message || 'Failed to fetch latest two leaderboard snapshots');
-  }
-};
-
-/**
- * Calculate aggregate stats for a club
- */
-export const getClubStats = async (club: string) => {
-  try {
-    const clubMeps = await getMepsByClub(club);
-
-    // Aggregate voting stats
-    let totalVoted = 0;
-    let totalMissed = 0;
-    let totalVotings = 0;
-
-    clubMeps.forEach((mep: any) => {
-      if (mep.votingStats && Array.isArray(mep.votingStats)) {
-        mep.votingStats.forEach((stat: any) => {
-          totalVoted += stat.numVoted || 0;
-          totalMissed += stat.numMissed || 0;
-          totalVotings += stat.numVotings || 0;
-        });
-      }
-    });
-
-    const attendanceRate = totalVotings > 0
-      ? ((totalVoted / totalVotings) * 100).toFixed(1)
-      : '0';
-
-    return {
-      club,
-      memberCount: clubMeps.length,
-      totalVoted,
-      totalMissed,
-      totalVotings,
-      attendanceRate: `${attendanceRate}%`,
-    };
-  } catch (error: any) {
-    throw new Error(error.message || 'Failed to calculate club stats');
   }
 };
 
