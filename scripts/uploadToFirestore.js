@@ -127,7 +127,8 @@ async function uploadMepData() {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      batch.set(docRef, mepData);
+      // Merge so fields written by other pipeline steps (committees, activity…) survive
+      batch.set(docRef, mepData, { merge: true });
       operationCount++;
       totalUploaded++;
 
