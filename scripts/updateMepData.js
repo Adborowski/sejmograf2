@@ -82,6 +82,16 @@ const steps = [
     script: "scripts/uploadActivity.js",
     description: "Writing MEP activity and ministry response stats to Firestore",
   },
+  {
+    name: "Fetch speeches",
+    script: "scraping/scraper-speeches.js",
+    description: "Fetching plenary transcripts",
+  },
+  {
+    name: "Upload speeches",
+    script: "scripts/uploadSpeeches.js",
+    description: "Writing MEP speech stats to Firestore",
+  },
 ];
 
 let currentStep = 0;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fetchJson } from "../../scraping/lib/http.js";
+import { fetchJson, mapWithConcurrency } from "../../scraping/lib/http.js";
 
 const response = (status, body = {}) => ({ ok: status < 400, status, json: async () => body });
 
@@ -23,5 +23,31 @@ describe("fetchJson", () => {
     const fetchImpl = vi.fn().mockResolvedValue(response(500));
     await expect(fetchJson("u", { fetchImpl, retries: 2, backoffMs: 0 })).rejects.toThrow("HTTP 500");
     expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("fetchJson timeout", () => {
+  it("aborts a hung request and retries", async () => {
+    const fetchImpl = vi.fn()
+      .mockImplementationOnce((_url, { signal }) =>
+        new Promise((_, reject) => signal.addEventListener("abort", () => reject(signal.reason))),
+      )
+      .mockResolvedValueOnce(response(200, { ok: 1 }));
+    await expect(fetchJson("u", { fetchImpl, backoffMs: 0, timeoutMs: 10 })).resolves.toEqual({ ok: 1 });
+  });
+});
+
+describe("mapWithConcurrency", () => {
+  it("keeps input order and never exceeds the limit", async () => {
+    let inFlight = 0;
+    let peak = 0;
+    const results = await mapWithConcurrency([30, 10, 20, 5, 15], 2, async (ms, i) => {
+      peak = Math.max(peak, ++inFlight);
+      await new Promise((r) => setTimeout(r, ms));
+      inFlight--;
+      return i;
+    });
+    expect(results).toEqual([0, 1, 2, 3, 4]);
+    expect(peak).toBe(2);
   });
 });

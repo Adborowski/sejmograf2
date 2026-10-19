@@ -78,3 +78,22 @@ export const getRecentQuestions = async (mepId: number, count = 10): Promise<Que
     .sort((a, b) => b.receiptDate.localeCompare(a.receiptDate) || b.num - a.num)
     .slice(0, count);
 };
+
+/**
+ * URL of one plenary statement's full text (HTML).
+ */
+export const statementUrl = (proceeding: number, date: string, num: number) =>
+  `${SEJM_API}/proceedings/${proceeding}/${date}/transcripts/${num}`;
+
+/**
+ * Agenda item a statement was made under, read from its transcript HTML
+ * (<p class="punkt-tytul">). Null if the page has no agenda item.
+ */
+export const getStatementTopic = async (proceeding: number, date: string, num: number): Promise<string | null> => {
+  const res = await fetch(statementUrl(proceeding, date, num));
+  if (!res.ok) throw new Error(`Sejm API: HTTP ${res.status}`);
+  const html = await res.text();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const topic = doc.querySelector('.punkt-tytul')?.textContent?.replace(/\s+/g, ' ').trim();
+  return topic || null;
+};

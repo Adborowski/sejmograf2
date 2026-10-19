@@ -34,6 +34,20 @@ export interface MepActivity {
 }
 
 /**
+ * Plenary speech stats (written by scraper-speeches.js)
+ */
+export interface MepSpeeches {
+  speeches: number; // spoken as an MP
+  seconds: number; // total speaking time of those speeches
+  written: number; // statements submitted in writing, not delivered
+  official: number; // spoken in a government role
+  rapporteur: number; // speeches as committee rapporteur
+  daysSpoken: number;
+  lastDate: string | null;
+  recent: Array<{ proceeding: number; date: string; num: number; kind: 'speech' | 'written' | 'official' }>;
+}
+
+/**
  * How one ministry answers MEPs' questions (stats/ministries)
  */
 export interface MinistryStat {
@@ -87,6 +101,9 @@ export interface Mep {
 
   // Parliamentary questions
   activity?: MepActivity;
+
+  // Plenary speeches
+  speeches?: MepSpeeches;
 
   // Metadata
   updatedAt?: any; // Firestore Timestamp
