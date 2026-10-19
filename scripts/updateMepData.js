@@ -26,11 +26,6 @@ const steps = [
     description: "Fetching MEP profiles from Sejm API",
   },
   {
-    name: "Fetch voting data",
-    script: "scraping/scraper-voting.js",
-    description: "Fetching voting statistics",
-  },
-  {
     name: "Combine data",
     script: "scraping/scraper-combine-voting.js",
     description: "Merging profiles with voting data",
@@ -39,6 +34,11 @@ const steps = [
     name: "Aggregate voting stats",
     script: "scraping/aggregate-voting-stats.js",
     description: "Aggregating by parliamentary sitting",
+  },
+  {
+    name: "Validate data",
+    script: "scraping/validate-data.js",
+    description: "Checking data sanity before writing to Firestore",
   },
   {
     name: "Upload to Firestore",

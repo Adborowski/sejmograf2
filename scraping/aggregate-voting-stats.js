@@ -1,73 +1,14 @@
 const colors = require("../utils/ansiColors.js");
 const fs = require("fs");
 const path = require("path");
+const {
+  aggregateVotingStats,
+  computeAttendanceTotals,
+} = require("./lib/attendance.js");
 
 console.log(
   `${colors.cyan}${colors.bold}==== AGGREGATE VOTING STATS BY SITTING ====${colors.reset}\n`,
 );
-
-// Aggregate voting stats by sitting number
-const aggregateVotingStats = (votingStats) => {
-  if (!votingStats || !Array.isArray(votingStats)) {
-    return votingStats;
-  }
-
-  // Group by sitting number
-  const bySitting = {};
-
-  votingStats.forEach((stat) => {
-    const sitting = stat.sitting;
-
-    if (!bySitting[sitting]) {
-      bySitting[sitting] = {
-        sitting: sitting,
-        numMissed: 0,
-        numVoted: 0,
-        numVotings: 0,
-        dates: [],
-        absenceExcuses: [],
-      };
-    }
-
-    // Sum the numbers
-    bySitting[sitting].numMissed += stat.numMissed || 0;
-    bySitting[sitting].numVoted += stat.numVoted || 0;
-    bySitting[sitting].numVotings += stat.numVotings || 0;
-
-    // Collect dates and absenceExcuse values
-    if (stat.date) {
-      bySitting[sitting].dates.push(stat.date);
-    }
-    bySitting[sitting].absenceExcuses.push(stat.absenceExcuse);
-  });
-
-  // Convert to object keyed by sitting number
-  const result = {};
-
-  Object.values(bySitting).forEach((sitting) => {
-    // Sort dates and get the latest one
-    const latestDate = sitting.dates.sort().reverse()[0];
-
-    // Use absenceExcuse from the latest date entry
-    const latestIndex = votingStats.findIndex(
-      (s) => s.sitting === sitting.sitting && s.date === latestDate,
-    );
-    const absenceExcuse =
-      latestIndex >= 0 ? votingStats[latestIndex].absenceExcuse : false;
-
-    // Use sitting number as the key
-    result[sitting.sitting] = {
-      absenceExcuse: absenceExcuse,
-      date: latestDate,
-      numMissed: sitting.numMissed,
-      numVoted: sitting.numVoted,
-      numVotings: sitting.numVotings,
-      sitting: sitting.sitting,
-    };
-  });
-
-  return result;
-};
 
 // Main function
 const aggregateFile = () => {
@@ -105,26 +46,12 @@ const aggregateFile = () => {
       );
     }
 
-    // Pre-compute totals across all sittings
-    let totalVoted = 0;
-    let totalMissed = 0;
-    let totalVotings = 0;
-    if (aggregated && typeof aggregated === "object") {
-      Object.values(aggregated).forEach((stat) => {
-        totalVoted += stat.numVoted || 0;
-        totalMissed += stat.numMissed || 0;
-        totalVotings += stat.numVotings || 0;
-      });
-    }
-    const attendanceRate = totalVotings > 0 ? totalVoted / totalVotings : null;
+    const totals = computeAttendanceTotals(aggregated);
 
     return {
       ...mep,
       votingStats: aggregated,
-      totalVoted,
-      totalMissed,
-      totalVotings,
-      attendanceRate,
+      ...totals,
     };
   });
 
