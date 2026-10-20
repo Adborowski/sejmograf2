@@ -48,6 +48,37 @@ export interface MepSpeeches {
 }
 
 /**
+ * A vote cast against the MEP's club line
+ */
+export interface Rebellion {
+  sitting: number;
+  num: number;
+  date: string;
+  title: string;
+  topic: string | null;
+  vote: 'YES' | 'NO' | 'ABSTAIN';
+  clubLine: 'YES' | 'NO' | 'ABSTAIN';
+  club: string; // club at the time of the vote
+}
+
+/**
+ * Party loyalty from individual votes (written by scraper-votes.js)
+ */
+export interface MepLoyalty {
+  cast: number; // YES/NO/ABSTAIN votes cast
+  abstained: number;
+  withLine: number; // votes cast where the club had a majority line
+  rebellions: number; // of those, different from the line
+  opposed: number; // of those, the opposite side (YES vs NO)
+  loyalty: number | null; // 0–1; null for independents
+  abstainRate: number | null; // 0–1
+  club: string | null; // club at the latest vote
+  clubAverage: number | null;
+  sejmAverage: number | null;
+  recentRebellions: Rebellion[];
+}
+
+/**
  * How one ministry answers MEPs' questions (stats/ministries)
  */
 export interface MinistryStat {
@@ -104,6 +135,9 @@ export interface Mep {
 
   // Plenary speeches
   speeches?: MepSpeeches;
+
+  // Party loyalty
+  loyalty?: MepLoyalty;
 
   // Metadata
   updatedAt?: any; // Firestore Timestamp

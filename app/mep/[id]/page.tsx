@@ -11,6 +11,7 @@ import { ReviewsSection } from '@/components/mep/ReviewsSection';
 import { RolesSection } from '@/components/mep/RolesSection';
 import { ActivitySection } from '@/components/mep/ActivitySection';
 import { SpeechesSection } from '@/components/mep/SpeechesSection';
+import { LoyaltySection } from '@/components/mep/LoyaltySection';
 import { FEATURES } from '@/lib/features';
 import { CLUB_COLOR_OVERRIDES, CLUB_LOGOS } from '@/lib/clubStyles';
 
@@ -177,6 +178,8 @@ export default function MepStatsPage({ params }: { params: Promise<{ id: string 
               </div>
 
               <RolesSection committees={mep.committees} clubFunction={mep.clubFunction} club={mep.club} />
+
+              <LoyaltySection loyalty={mep.loyalty} />
 
               <SpeechesSection speeches={mep.speeches} />
 

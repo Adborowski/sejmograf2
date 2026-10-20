@@ -51,6 +51,7 @@ firestore-debug.log
 # scraping data (generated, not source code)
 scraping/img/
 scraping/*.json
+scraping/*.json.gz
 
 # email blast scripts — progress logs contain personal data
 scripts/editors.json

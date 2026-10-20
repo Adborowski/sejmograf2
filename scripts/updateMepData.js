@@ -92,6 +92,28 @@ const steps = [
     script: "scripts/uploadSpeeches.js",
     description: "Writing MEP speech stats to Firestore",
   },
+  {
+    name: "Download votes cache",
+    script: "scripts/votesCache.js",
+    args: ["download"],
+    description: "Restoring previously fetched individual votes from Storage",
+  },
+  {
+    name: "Fetch votes",
+    script: "scraping/scraper-votes.js",
+    description: "Fetching new votings and computing party loyalty",
+  },
+  {
+    name: "Upload votes cache",
+    script: "scripts/votesCache.js",
+    args: ["upload"],
+    description: "Saving individual votes to Storage for the next run",
+  },
+  {
+    name: "Upload loyalty",
+    script: "scripts/uploadLoyalty.js",
+    description: "Writing MEP party loyalty to Firestore",
+  },
 ];
 
 let currentStep = 0;
@@ -108,7 +130,8 @@ function runStep(step) {
 
   try {
     const scriptPath = path.resolve(__dirname, "..", step.script);
-    execSync(`node "${scriptPath}"`, {
+    const args = step.args ? ` ${step.args.join(" ")}` : "";
+    execSync(`node "${scriptPath}"${args}`, {
       stdio: "inherit",
       cwd: path.resolve(__dirname, ".."),
     });
