@@ -118,3 +118,48 @@ describe("validateSpeeches", () => {
     expect(validateSpeeches(expected, expected.slice(1), {}).join()).toMatch(/1 sitting day transcript/);
   });
 });
+
+describe("statement topics", async () => {
+  const { parseStatementTopic, topicsToFetch, attachTopics } = await import("../../scraping/lib/speeches.js");
+
+  // Shape matches /proceedings/{n}/{date}/transcripts/{num}
+  const page = (punkt, tytul) => `<html><body><h1>10. kadencja</h1>
+<h2 class="punkt">${punkt}</h2>
+<p class="punkt-tytul">${tytul}</p>
+<h2 class="mowca">Poseł X:</h2><p>...</p></body></html>`;
+
+  it("reads the agenda title, collapsing whitespace and stripping tags", () => {
+    const html = page("16. punkt porządku dziennego:", "\r\nSprawozdanie Komisji <b>Infrastruktury</b>\r\n o projekcie (druki nr 3101 i 3151).\r\n");
+    expect(parseStatementTopic(html)).toBe("Sprawozdanie Komisji Infrastruktury o projekcie (druki nr 3101 i 3151)");
+  });
+
+  it("decodes HTML entities", () => {
+    expect(parseStatementTopic(page("1.", "Wyb&oacute;r &bdquo;Marszałka&rdquo; &amp; &#378;r&#xF3;d&#322;o"))).toBe("Wybór „Marszałka” & źródło");
+  });
+
+  it("falls back to a descriptive section heading, but not a bare agenda number", () => {
+    expect(parseStatementTopic(page("Oświadczenia.", "\r\n"))).toBe("Oświadczenia");
+    expect(parseStatementTopic(page("3. punkt porządku dziennego:", "\r\n"))).toBeNull();
+    expect(parseStatementTopic("<html><body>no agenda</body></html>")).toBeNull();
+  });
+
+  const speeches = {
+    1: { recent: [{ proceeding: 2, date: "2025-02-01", num: 9 }, { proceeding: 1, date: "2025-01-10", num: 2 }] },
+    2: { recent: [{ proceeding: 2, date: "2025-02-01", num: 9 }, { proceeding: 2, date: "2025-02-01", num: 30 }] },
+  };
+
+  it("lists distinct uncached statements, newest first", () => {
+    const missing = topicsToFetch(speeches, { "1/2025-01-10/2": "Ustawa A" });
+    expect(missing.map((s) => s.num)).toEqual([30, 9]);
+  });
+
+  it("treats a cached null (no agenda item) as known", () => {
+    expect(topicsToFetch(speeches, { "2/2025-02-01/9": null, "2/2025-02-01/30": "B", "1/2025-01-10/2": "A" })).toEqual([]);
+  });
+
+  it("attaches cached topics, null when unknown", () => {
+    const copy = JSON.parse(JSON.stringify(speeches));
+    attachTopics(copy, { "2/2025-02-01/9": "Ustawa B" });
+    expect(copy[1].recent.map((s) => s.topic)).toEqual(["Ustawa B", null]);
+  });
+});

@@ -126,3 +126,65 @@ describe("sittingsToFetch", () => {
     expect(sittingsToFetch(index, cache)).toEqual([2, 3]);
   });
 });
+
+describe("agreement and vote history", async () => {
+  const { buildClubAgreement, buildMepClubAgreement, buildVotingIndex, buildVoteHistory } = await import(
+    "../../scraping/lib/votes.js"
+  );
+  const many = (n, start, byClubFor) =>
+    Array.from({ length: n }, (_, i) => voting(start + i, byClubFor(i), { date: `2025-0${start < 200 ? 1 : 6}-01T10:00:00` }));
+
+  // 100 votings where KO and PiS disagree, then 100 where they agree; Lewica always with KO
+  const votings = [
+    ...many(100, 1, () => ({ KO: { YES: ids(5, 1) }, PiS: { NO: ids(5, 20) }, Lewica: { YES: ids(5, 40) } })),
+    ...many(100, 200, () => ({ KO: { YES: ids(5, 1) }, PiS: { YES: ids(5, 20) }, Lewica: { YES: ids(5, 40) } })),
+  ];
+
+  it("measures how often club lines match", () => {
+    const { clubs, pairs } = buildClubAgreement(votings);
+    expect(clubs).toEqual(["KO", "Lewica", "PiS"]);
+    expect(pairs.KO.PiS).toEqual({ agree: 100, n: 200 });
+    expect(pairs.KO.Lewica).toEqual({ agree: 200, n: 200 });
+  });
+
+  it("can be limited to a recent period", () => {
+    const { pairs } = buildClubAgreement(votings, "2025-06-01");
+    expect(pairs.KO.PiS).toEqual({ agree: 100, n: 100 });
+  });
+
+  it("leaves out clubs with too few votings with a line", () => {
+    const small = [...votings, voting(999, { Razem: { YES: ids(3, 80) } })];
+    expect(buildClubAgreement(small).clubs).not.toContain("Razem");
+  });
+
+  it("gives each MEP's agreement with every club, highest first", () => {
+    const agreement = buildMepClubAgreement(votings, ["KO", "PiS", "Lewica"]);
+    expect(agreement[1].map((a) => [a.club, a.agree])).toEqual([["KO", 1], ["Lewica", 1], ["PiS", 0.5]]);
+  });
+
+  it("builds an index ordered by sitting/num with titles stored once", () => {
+    const index = buildVotingIndex([
+      voting(2, { KO: { YES: [1], NO: [2] } }, { title: "Ustawa A" }),
+      voting(1, { KO: { ABSTAIN: [1] } }, { title: "Ustawa A", topic: "poprawka 1" }),
+      voting(3, {}, { title: "Wybór", kind: "ON_LIST" }),
+    ]);
+    expect(index.titles).toEqual(["Ustawa A", "Wybór"]);
+    expect(index.rows).toEqual([
+      [1, 1, "2025-01-01", 0, "poprawka 1", 0, 0, 1, 0],
+      [1, 2, "2025-01-01", 0, "", 1, 1, 0, 0],
+      [1, 3, "2025-01-01", 1, "", 0, 0, 0, 1],
+    ]);
+  });
+
+  it("encodes each MEP's votes as one character per indexed voting", () => {
+    const history = buildVoteHistory(
+      [
+        voting(2, { KO: { NO: [1], ABSENT: [2] } }),
+        voting(1, { KO: { YES: [1], PRESENT: [2] } }),
+        voting(3, { KO: { VOTE_VALID: [1] } }, { kind: "ON_LIST" }),
+      ],
+      [1, 2, 3],
+    );
+    expect(history).toEqual({ 1: "YNV", 2: "P- ", 3: "   " });
+  });
+});

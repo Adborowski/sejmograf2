@@ -137,8 +137,132 @@ const validateLoyalty = (votingIndex, cache, loyalty) => {
   return errors;
 };
 
+// --- Agreement ---------------------------------------------------------------
+
+// Clubs need this many votings with a line in a period to appear in the matrix
+const MIN_CLUB_LINES = 100;
+
+const electronicInOrder = (votings) =>
+  [...votings]
+    .filter((v) => v.kind === "ELECTRONIC")
+    .sort((a, b) => a.date.localeCompare(b.date) || a.sitting - b.sitting || a.num - b.num);
+
+const clubLines = (voting) => {
+  const lines = {};
+  for (const [club, clubVotes] of Object.entries(voting.byClub)) {
+    if (club === NO_CLUB) continue;
+    const line = clubLine(clubVotes);
+    if (line) lines[club] = line;
+  }
+  return lines;
+};
+
+// How often each pair of clubs' lines matched, over votings since `since` (YYYY-MM-DD, optional).
+// Returns { clubs: [...], pairs: { [a]: { [b]: { agree, n } } } } — a≠b, both directions.
+const buildClubAgreement = (votings, since = null) => {
+  const lineCounts = {};
+  const pairs = {};
+  for (const voting of electronicInOrder(votings)) {
+    if (since && voting.date.slice(0, 10) < since) continue;
+    const lines = Object.entries(clubLines(voting));
+    for (const [club] of lines) lineCounts[club] = (lineCounts[club] || 0) + 1;
+    for (const [a, la] of lines) {
+      for (const [b, lb] of lines) {
+        if (a === b) continue;
+        const p = ((pairs[a] ??= {})[b] ??= { agree: 0, n: 0 });
+        p.n++;
+        if (la === lb) p.agree++;
+      }
+    }
+  }
+  const clubs = Object.keys(lineCounts)
+    .filter((c) => lineCounts[c] >= MIN_CLUB_LINES)
+    .sort((a, b) => a.localeCompare(b, "pl"));
+  const kept = {};
+  for (const a of clubs) {
+    kept[a] = {};
+    for (const b of clubs) if (a !== b && pairs[a]?.[b]) kept[a][b] = pairs[a][b];
+  }
+  return { clubs, pairs: kept };
+};
+
+// Each MEP's agreement with every club's line in `clubs`, over votes the MEP cast.
+// Returns { [mepId]: [{ club, agree, n }] } sorted by agreement, highest first.
+const buildMepClubAgreement = (votings, clubs) => {
+  const wanted = new Set(clubs);
+  const counts = {};
+  for (const voting of electronicInOrder(votings)) {
+    const lines = clubLines(voting);
+    for (const clubVotes of Object.values(voting.byClub)) {
+      for (const option of CAST) {
+        for (const id of clubVotes[option] || []) {
+          const mep = (counts[id] ??= {});
+          for (const [club, line] of Object.entries(lines)) {
+            if (!wanted.has(club)) continue;
+            const c = (mep[club] ??= { agree: 0, n: 0 });
+            c.n++;
+            if (option === line) c.agree++;
+          }
+        }
+      }
+    }
+  }
+  const result = {};
+  for (const [id, byClub] of Object.entries(counts)) {
+    result[id] = Object.entries(byClub)
+      .map(([club, { agree, n }]) => ({ club, agree: agree / n, n }))
+      .sort((a, b) => b.agree - a.agree);
+  }
+  return result;
+};
+
+// --- Vote history + search index ----------------------------------------------
+
+// One character per voting in index order
+const VOTE_CODES = { YES: "Y", NO: "N", ABSTAIN: "A", ABSENT: "-", PRESENT: "P", VOTE_VALID: "V" };
+const NOT_SEATED = " "; // not an MEP at the time of this voting
+const UNKNOWN = "?";
+
+const indexOrder = (votings) => [...votings].sort((a, b) => a.sitting - b.sitting || a.num - b.num);
+
+// Searchable list of all votings. Titles repeat across a sitting's votings, so
+// they're stored once. Row: [sitting, num, date, titleIndex, topic, yes, no, abstain, onList]
+const buildVotingIndex = (votings) => {
+  const titles = new Map();
+  const rows = indexOrder(votings).map((v) => {
+    if (!titles.has(v.title)) titles.set(v.title, titles.size);
+    const totals = { YES: 0, NO: 0, ABSTAIN: 0 };
+    for (const clubVotes of Object.values(v.byClub)) {
+      for (const option of CAST) totals[option] += clubVotes[option]?.length ?? 0;
+    }
+    return [v.sitting, v.num, v.date.slice(0, 10), titles.get(v.title), v.topic || "",
+      totals.YES, totals.NO, totals.ABSTAIN, v.kind === "ON_LIST" ? 1 : 0];
+  });
+  return { titles: [...titles.keys()], rows };
+};
+
+// { [mepId]: "YN-A …" } aligned with buildVotingIndex rows
+const buildVoteHistory = (votings, mepIds) => {
+  const ordered = indexOrder(votings);
+  const chars = {};
+  for (const id of mepIds) chars[id] = new Array(ordered.length).fill(NOT_SEATED);
+  ordered.forEach((v, i) => {
+    for (const clubVotes of Object.values(v.byClub)) {
+      for (const [option, ids] of Object.entries(clubVotes)) {
+        for (const id of ids) if (chars[id]) chars[id][i] = VOTE_CODES[option] ?? UNKNOWN;
+      }
+    }
+  });
+  return Object.fromEntries(Object.entries(chars).map(([id, c]) => [id, c.join("")]));
+};
+
 module.exports = {
   NO_CLUB,
+  VOTE_CODES,
+  buildClubAgreement,
+  buildMepClubAgreement,
+  buildVotingIndex,
+  buildVoteHistory,
   votingKey,
   compactVoting,
   clubLine,

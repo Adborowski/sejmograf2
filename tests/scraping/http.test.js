@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { fetchJson, mapWithConcurrency } from "../../scraping/lib/http.js";
+import { fetchJson, fetchText, mapWithConcurrency } from "../../scraping/lib/http.js";
 
-const response = (status, body = {}) => ({ ok: status < 400, status, json: async () => body });
+const response = (status, body = {}) => ({ ok: status < 400, status, json: async () => body, text: async () => String(body) });
 
 describe("fetchJson", () => {
   it("retries 5xx and returns the eventual success", async () => {
@@ -49,5 +49,12 @@ describe("mapWithConcurrency", () => {
     });
     expect(results).toEqual([0, 1, 2, 3, 4]);
     expect(peak).toBe(2);
+  });
+});
+
+describe("fetchText", () => {
+  it("returns the body as text, with the same retries", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(502)).mockResolvedValueOnce(response(200, "<html></html>"));
+    await expect(fetchText("u", { fetchImpl, backoffMs: 0 })).resolves.toBe("<html></html>");
   });
 });

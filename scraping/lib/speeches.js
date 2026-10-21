@@ -87,7 +87,64 @@ const validateSpeeches = (expectedDays, days, speeches) => {
   return errors;
 };
 
+// --- Statement topics -----------------------------------------------------------
+
+const statementKey = ({ proceeding, date, num }) => `${proceeding}/${date}/${num}`;
+
+const NAMED_ENTITIES = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+  oacute: "ó", Oacute: "Ó", ndash: "–", mdash: "—", bdquo: "„", rdquo: "”", ldquo: "“", hellip: "…",
+};
+
+const htmlToText = (html) =>
+  html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&([a-z]+);/gi, (m, name) => NAMED_ENTITIES[name] ?? m)
+    .replace(/\s+/g, " ")
+    .trim();
+
+// Agenda item a statement was made under, from its transcript HTML:
+// <p class="punkt-tytul">, or the section heading when that's empty (e.g. "Oświadczenia.").
+const parseStatementTopic = (html) => {
+  const title = html.match(/<p class="punkt-tytul">([\s\S]*?)<\/p>/);
+  // Agenda titles end with a full stop, which reads oddly as a link label
+  const text = title ? htmlToText(title[1]).replace(/\.$/, "") : "";
+  if (text) return text;
+  const heading = html.match(/<h2 class="punkt">([\s\S]*?)<\/h2>/);
+  const headingText = heading ? htmlToText(heading[1]) : "";
+  return headingText && !/punkt porządku dziennego/i.test(headingText) ? headingText.replace(/[.:]$/, "") : null;
+};
+
+// Distinct recent statements (across all MEPs) whose topic isn't cached yet, newest first
+const topicsToFetch = (speeches, cache) => {
+  const seen = new Set();
+  const missing = [];
+  for (const r of Object.values(speeches)) {
+    for (const s of r.recent) {
+      const key = statementKey(s);
+      if (key in cache || seen.has(key)) continue;
+      seen.add(key);
+      missing.push(s);
+    }
+  }
+  return missing.sort((a, b) => b.date.localeCompare(a.date) || b.num - a.num);
+};
+
+// Copy cached topics onto each MEP's recent statements (null when unknown)
+const attachTopics = (speeches, cache) => {
+  for (const r of Object.values(speeches)) {
+    r.recent = r.recent.map((s) => ({ ...s, topic: cache[statementKey(s)] ?? null }));
+  }
+  return speeches;
+};
+
 module.exports = {
+  statementKey,
+  parseStatementTopic,
+  topicsToFetch,
+  attachTopics,
   MAX_STATEMENT_SECONDS,
   listSittingDays,
   statementSeconds,

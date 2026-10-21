@@ -9,12 +9,16 @@ const {
   buildLoyalty,
   sittingsToFetch,
   validateLoyalty,
+  buildClubAgreement,
+  buildMepClubAgreement,
+  buildVotingIndex,
+  buildVoteHistory,
 } = require("./lib/votes.js");
 
 console.log(`${colors.cyan}${colors.bold}==== SEJM-SCRAPER VOTES (individual votes → party loyalty) ====${colors.reset}\n`);
 
 // Every voting's individual votes, compacted. Kept between runs (Firebase Storage
-// in the pipeline, see scripts/votesCache.js) so only new votings are fetched.
+// in the pipeline, see scripts/pipelineCache.js) so only new votings are fetched.
 const CACHE_PATH = path.resolve(__dirname, "votings-cache.json.gz");
 const CONCURRENCY = 4;
 const SAVE_EVERY = 200;
@@ -74,7 +78,35 @@ const saveCache = (cache) => fs.writeFileSync(CACHE_PATH, zlib.gzipSync(JSON.str
     }
 
     fs.writeFileSync(path.resolve(__dirname, "mep-loyalty.json"), JSON.stringify(loyalty, null, 2));
-    console.log(`${colors.green}✓ Saved loyalty for ${Object.keys(loyalty).length} MEPs${colors.reset}\n`);
+    console.log(`${colors.green}✓ Saved loyalty for ${Object.keys(loyalty).length} MEPs${colors.reset}`);
+
+    // Club agreement: whole term and the last ~6 months (coalitions shift)
+    const votings = Object.values(cache);
+    const today = new Date();
+    const since = new Date(today.getTime() - 182 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const all = buildClubAgreement(votings);
+    const recent = buildClubAgreement(votings, since);
+    fs.writeFileSync(
+      path.resolve(__dirname, "club-agreement.json"),
+      JSON.stringify({ computedOn: today.toISOString().slice(0, 10), since, all, recent }, null, 2),
+    );
+
+    // Search index + per-MEP vote strings aligned with it. indexId ties the two
+    // together so the site can tell if they were written by different runs.
+    const votingIndex = buildVotingIndex(votings);
+    const last = votingIndex.rows[votingIndex.rows.length - 1];
+    const indexId = `${votingIndex.rows.length}:${last[0]}/${last[1]}`;
+    const mepIds = JSON.parse(fs.readFileSync(path.resolve(__dirname, "meps.json"), "utf8")).map((m) => m.id);
+    const history = buildVoteHistory(votings, mepIds);
+    const clubAgreement = buildMepClubAgreement(votings, recent.clubs);
+    fs.writeFileSync(path.resolve(__dirname, "voting-index.json"), JSON.stringify({ indexId, ...votingIndex }));
+    fs.writeFileSync(
+      path.resolve(__dirname, "mep-votes.json"),
+      JSON.stringify({ indexId, history, clubAgreement }),
+    );
+    console.log(
+      `${colors.green}✓ Saved index of ${votingIndex.rows.length} votings, vote history and agreement for ${recent.clubs.length} clubs${colors.reset}\n`,
+    );
   } catch (error) {
     console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
     process.exit(1);

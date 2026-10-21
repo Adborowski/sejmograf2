@@ -5,9 +5,11 @@ const SEJM_API = "https://api.sejm.gov.pl/sejm/term10";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const fetchJson = async (
+const fetchWithRetry = async (
   url,
-  { retries = 3, backoffMs = 1000, timeoutMs = 90_000, fetchImpl = fetch } = {},
+  read,
+  // 2s, 4s, 8s, 16s: the Sejm API has short bursts of 502s, so give it ~30s to recover
+  { retries = 4, backoffMs = 2000, timeoutMs = 90_000, fetchImpl = fetch } = {},
 ) => {
   let lastError;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -15,7 +17,7 @@ const fetchJson = async (
     try {
       // Without a timeout a hung connection would stall the nightly pipeline
       const res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
-      if (res.ok) return await res.json();
+      if (res.ok) return await read(res);
       lastError = new Error(`HTTP ${res.status} for ${url}`);
       if (res.status !== 429 && res.status < 500) break;
     } catch (error) {
@@ -24,6 +26,9 @@ const fetchJson = async (
   }
   throw lastError;
 };
+
+const fetchJson = (url, options) => fetchWithRetry(url, (res) => res.json(), options);
+const fetchText = (url, options) => fetchWithRetry(url, (res) => res.text(), options);
 
 // Run `fn` over `items` with at most `limit` in flight; results keep input order.
 const mapWithConcurrency = async (items, limit, fn) => {
@@ -39,4 +44,4 @@ const mapWithConcurrency = async (items, limit, fn) => {
   return results;
 };
 
-module.exports = { SEJM_API, fetchJson, sleep, mapWithConcurrency };
+module.exports = { SEJM_API, fetchJson, fetchText, sleep, mapWithConcurrency };

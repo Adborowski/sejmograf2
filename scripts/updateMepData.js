@@ -83,9 +83,21 @@ const steps = [
     description: "Writing MEP activity and ministry response stats to Firestore",
   },
   {
+    name: "Download topics cache",
+    script: "scripts/pipelineCache.js",
+    args: ["download", "topics"],
+    description: "Restoring previously fetched statement topics from Storage",
+  },
+  {
     name: "Fetch speeches",
     script: "scraping/scraper-speeches.js",
-    description: "Fetching plenary transcripts",
+    description: "Fetching plenary transcripts and topics of recent statements",
+  },
+  {
+    name: "Upload topics cache",
+    script: "scripts/pipelineCache.js",
+    args: ["upload", "topics"],
+    description: "Saving statement topics to Storage for the next run",
   },
   {
     name: "Upload speeches",
@@ -94,8 +106,8 @@ const steps = [
   },
   {
     name: "Download votes cache",
-    script: "scripts/votesCache.js",
-    args: ["download"],
+    script: "scripts/pipelineCache.js",
+    args: ["download", "votes"],
     description: "Restoring previously fetched individual votes from Storage",
   },
   {
@@ -105,14 +117,14 @@ const steps = [
   },
   {
     name: "Upload votes cache",
-    script: "scripts/votesCache.js",
-    args: ["upload"],
+    script: "scripts/pipelineCache.js",
+    args: ["upload", "votes"],
     description: "Saving individual votes to Storage for the next run",
   },
   {
-    name: "Upload loyalty",
-    script: "scripts/uploadLoyalty.js",
-    description: "Writing MEP party loyalty to Firestore",
+    name: "Upload votes",
+    script: "scripts/uploadVotes.js",
+    description: "Writing loyalty, vote history, club agreement and the voting index to Firestore",
   },
 ];
 
