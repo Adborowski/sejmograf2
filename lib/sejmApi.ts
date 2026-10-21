@@ -62,12 +62,22 @@ const toItem = (type: QuestionType, q: ApiQuestion): QuestionItem => {
 };
 
 /**
+ * MEP id as the Sejm API stores question authors: three digits, zero-padded
+ * ("056"). The `from` filter matches it as text, so `from=56` finds nothing.
+ */
+export const authorId = (mepId: number) => String(mepId).padStart(3, '0');
+
+/** The MEP's profile on sejm.gov.pl, which lists all their questions */
+export const sejmProfileUrl = (mepId: number) =>
+  `https://www.sejm.gov.pl/Sejm10.nsf/posel.xsp?id=${authorId(mepId)}`;
+
+/**
  * Latest interpellations and written questions signed by an MEP, newest first.
  */
 export const getRecentQuestions = async (mepId: number, count = 10): Promise<QuestionItem[]> => {
   const lists = await Promise.all(
     (Object.keys(ENDPOINTS) as QuestionType[]).map(async (type) => {
-      const res = await fetch(`${SEJM_API}/${ENDPOINTS[type]}?from=${mepId}&limit=${count}&sort_by=-receiptDate`);
+      const res = await fetch(`${SEJM_API}/${ENDPOINTS[type]}?from=${authorId(mepId)}&limit=${count}&sort_by=-receiptDate`);
       if (!res.ok) throw new Error(`Sejm API: HTTP ${res.status}`);
       const data: ApiQuestion[] = await res.json();
       return data.map((q) => toItem(type, q));

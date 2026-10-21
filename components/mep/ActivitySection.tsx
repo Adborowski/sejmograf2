@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MepActivity } from '@/types/mep';
-import { getRecentQuestions, QuestionItem } from '@/lib/sejmApi';
+import { getRecentQuestions, QuestionItem, sejmProfileUrl } from '@/lib/sejmApi';
 import { RevealButton } from './RevealButton';
 import { Badge, BadgeTone, Card, LoadingState, SectionLabel, Stat, StatGrid } from '@/components/ui';
 import { formatDate, formatNumber } from '@/lib/format';
@@ -21,6 +21,8 @@ const STATUS_LABEL: Record<QuestionItem['status'], string> = {
   extended: 'Termin przedłużony',
   pending: 'Czeka na odpowiedź',
 };
+
+const RECENT_COUNT = 8;
 
 const TYPE_LABEL: Record<QuestionItem['type'], string> = {
   interpellation: 'Interpelacja',
@@ -41,7 +43,7 @@ export function ActivitySection({ mepId, activity }: ActivitySectionProps) {
   useEffect(() => {
     if (!total || !revealed) return;
     let cancelled = false;
-    getRecentQuestions(mepId, 8)
+    getRecentQuestions(mepId, RECENT_COUNT)
       .then((items) => { if (!cancelled) setRecent(items); })
       .catch(() => { if (!cancelled) setRecentError(true); });
     return () => { cancelled = true; };
@@ -82,14 +84,30 @@ export function ActivitySection({ mepId, activity }: ActivitySectionProps) {
 
           <div className="mt-6">
             {!revealed ? (
-              <RevealButton label="Pokaż ostatnie interpelacje i zapytania" onClick={() => setRevealed(true)} />
+              <RevealButton
+                label={`Pokaż ${Math.min(RECENT_COUNT, total)} najnowszych z ${formatNumber(total)}`}
+                onClick={() => setRevealed(true)}
+              />
             ) : (
               <>
-                <SectionLabel>Ostatnie</SectionLabel>
+                <SectionLabel>
+                  {recent && recent.length > 0
+                    ? `${recent.length} najnowszych z ${formatNumber(total)}`
+                    : 'Najnowsze'}
+                </SectionLabel>
                 {recentError ? (
-                  <p className="text-sm text-slate-500">Nie udało się pobrać listy z API Sejmu.</p>
+                  <p className="text-sm text-slate-500">
+                    Nie udało się pobrać listy z API Sejmu. Pełna lista jest na{' '}
+                    <a href={sejmProfileUrl(mepId)} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">sejm.gov.pl ↗</a>.
+                  </p>
                 ) : recent === null ? (
                   <LoadingState compact />
+                ) : recent.length === 0 ? (
+                  // Our counts come from the full list; if the live query comes back empty, say so plainly
+                  <p className="text-sm text-slate-500">
+                    API Sejmu nie zwróciło teraz listy dla tego posła, choć w statystykach jest {formatNumber(total)}. Pełna lista jest na{' '}
+                    <a href={sejmProfileUrl(mepId)} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">sejm.gov.pl ↗</a>.
+                  </p>
                 ) : (
                   <ul className="divide-y divide-slate-100">
                     {recent.map((q) => (
@@ -114,6 +132,11 @@ export function ActivitySection({ mepId, activity }: ActivitySectionProps) {
                       </li>
                     ))}
                   </ul>
+                )}
+                {recent && recent.length > 0 && total > recent.length && (
+                  <a href={sejmProfileUrl(mepId)} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-sm font-medium text-blue-700 hover:text-blue-800">
+                    Wszystkie {formatNumber(total)} na sejm.gov.pl ↗
+                  </a>
                 )}
               </>
             )}
