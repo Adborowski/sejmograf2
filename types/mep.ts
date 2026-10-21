@@ -44,7 +44,13 @@ export interface MepSpeeches {
   rapporteur: number; // speeches as committee rapporteur
   daysSpoken: number;
   lastDate: string | null;
-  recent: Array<{ proceeding: number; date: string; num: number; kind: 'speech' | 'written' | 'official' }>;
+  recent: Array<{
+    proceeding: number;
+    date: string;
+    num: number;
+    kind: 'speech' | 'written' | 'official';
+    topic?: string | null; // agenda item, fetched by the pipeline; missing until fetched
+  }>;
 }
 
 /**
@@ -76,6 +82,21 @@ export interface MepLoyalty {
   clubAverage: number | null;
   sejmAverage: number | null;
   recentRebellions: Rebellion[];
+}
+
+/**
+ * How often club lines matched (stats/club_agreement)
+ */
+export interface ClubAgreementPeriod {
+  clubs: string[];
+  pairs: Record<string, Record<string, { agree: number; n: number }>>;
+}
+
+export interface ClubAgreementData {
+  computedOn: string;
+  since: string; // start of the `recent` period
+  all: ClubAgreementPeriod;
+  recent: ClubAgreementPeriod;
 }
 
 /**
@@ -138,6 +159,11 @@ export interface Mep {
 
   // Party loyalty
   loyalty?: MepLoyalty;
+
+  // Votes: one character per voting in stats/votings_index (see lib/votings.ts)
+  voteHistory?: { indexId: string; votes: string };
+  // Agreement with each current club's line, highest first
+  clubAgreement?: Array<{ club: string; agree: number; n: number }>;
 
   // Metadata
   updatedAt?: any; // Firestore Timestamp

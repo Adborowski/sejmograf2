@@ -5,7 +5,9 @@ import { useMemo } from 'react';
 import { useMeps } from '@/hooks/useMeps';
 import { CLUB_FULL_NAMES, CLUB_LOGOS, getClubColorMap } from '@/lib/clubStyles';
 import { AttendanceChart } from '@/components/leaderboard/AttendanceChart';
-import { NavBar } from '@/components/layout/NavBar';
+import { CARD_CLASS, ErrorState, LoadingState, Page, PageHeader } from '@/components/ui';
+import { formatNumber, formatPercent, plural } from '@/lib/format';
+import { ClubAgreementMatrix } from '@/components/votes/ClubAgreementMatrix';
 
 const ALL_SORTED_CLUBS = Object.keys(CLUB_FULL_NAMES).sort();
 const STATIC_COLOR_MAP = getClubColorMap(ALL_SORTED_CLUBS);
@@ -42,84 +44,59 @@ export default function ClubBrowserPage() {
   }, [meps]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar backHref="/" maxWidth="max-w-5xl" />
+    <Page>
+      <PageHeader
+        eyebrow="Kluby"
+        title="Kluby parlamentarne"
+        description="Frekwencja, skład i to, z kim kluby głosują. Wybierz klub, aby zobaczyć jego posłów."
+      />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Kluby parlamentarne</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Wybierz klub, aby zobaczyć szczegółowe statystyki i listę posłów.
-          </p>
-        </div>
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message={error} />
+      ) : (
+        <div className="space-y-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {clubs.map(({ club, color, fullName, logoUrl, activeMemberCount, totalVoted, totalVotings, attendanceRate }) => (
+              <Link
+                key={club}
+                href={`/club/${encodeURIComponent(club)}`}
+                className={`${CARD_CLASS} group relative overflow-hidden p-5 hover:-translate-y-0.5 hover:shadow-md transition-all`}
+              >
+                <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: color }} />
+                <div className="flex items-start gap-4 mb-5">
+                  <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center bg-slate-50 ring-1 ring-inset ring-slate-200/70">
+                    <img src={logoUrl ?? '/club-placeholder.svg'} alt="" className="w-9 h-9 object-contain" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-400 tracking-wide">{club}</p>
+                    <h2 className="font-semibold text-slate-900 leading-snug group-hover:text-blue-700">{fullName}</h2>
+                  </div>
+                </div>
 
-        <div className="mb-8">
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <span className="text-xs text-slate-500">Średnia obecność</span>
+                  <span className="text-xl font-semibold tabular text-slate-900">
+                    {attendanceRate !== null ? formatPercent(attendanceRate) : '—'}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-1.5">
+                  <div className="h-1.5 rounded-full" style={{ width: `${(attendanceRate ?? 0) * 100}%`, backgroundColor: color }} />
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-400 mt-3 tabular">
+                  <span>{activeMemberCount} {plural(activeMemberCount, 'aktywny poseł', 'aktywnych posłów', 'aktywnych posłów')}</span>
+                  <span>{formatNumber(totalVoted)} / {formatNumber(totalVotings)}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <ClubAgreementMatrix />
+
           <AttendanceChart meps={meps} sittings={sittings} />
         </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <p className="text-red-700">{error}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {clubs.map(({ club, color, fullName, logoUrl, activeMemberCount, totalVoted, totalVotings, attendanceRate }) => {
-              const pct = attendanceRate !== null ? (attendanceRate * 100).toFixed(1) : null;
-              return (
-                <Link
-                  key={club}
-                  href={`/club/${encodeURIComponent(club)}`}
-                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden"
-                >
-                  {/* Colored top bar */}
-                  <div className="h-1.5 w-full" style={{ backgroundColor: color }} />
-
-                  <div className="p-5">
-                    <div className="flex items-start gap-4 mb-4">
-                      {logoUrl ? (
-                        <img src={logoUrl} alt={club} className="w-12 h-12 object-contain flex-shrink-0" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: `${color}15` }}>
-                          <img src="/club-placeholder.svg" alt="" className="w-full h-full object-contain p-1" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">{club}</p>
-                        <h3 className="font-bold text-gray-900 text-sm leading-snug">{fullName}</h3>
-                      </div>
-                    </div>
-
-                    {/* Attendance rate + bar */}
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-500">Średnia obecność</span>
-                        <span className="text-base font-bold tabular-nums" style={{ color }}>
-                          {pct !== null ? `${pct}%` : '—'}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full"
-                          style={{ width: `${(attendanceRate ?? 0) * 100}%`, backgroundColor: color }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <span>{activeMemberCount} aktywnych posłów</span>
-                      <span>{totalVoted.toLocaleString()} / {totalVotings.toLocaleString()} głosowań</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </main>
-    </div>
+      )}
+    </Page>
   );
 }

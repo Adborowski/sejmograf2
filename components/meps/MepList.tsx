@@ -5,6 +5,9 @@ import { Mep } from '@/types/mep';
 import MepCard from './MepCard';
 import MepFilters from './MepFilters';
 import { getClubColorMap } from '@/lib/clubStyles';
+import { normalize } from '@/lib/votings';
+import { EmptyState } from '@/components/ui';
+import { formatNumber } from '@/lib/format';
 
 interface MepListProps {
   meps: Mep[];
@@ -25,16 +28,17 @@ export default function MepList({ meps, clubs }: MepListProps) {
     return meps.filter((mep) => {
       // Search filter
       if (searchQuery) {
-        const tokens = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+        // Ignore case and Polish diacritics, so "lukasz" finds "Łukasz"
+        const tokens = normalize(searchQuery).split(/\s+/).filter(Boolean);
         const fields = [
-          mep.firstName.toLowerCase(),
-          mep.lastName.toLowerCase(),
-          mep.fullName.toLowerCase(),
+          mep.firstName,
+          mep.lastName,
+          mep.fullName,
           String(mep.id),
-          mep.profession?.toLowerCase() ?? '',
-          mep.districtName?.toLowerCase() ?? '',
-          mep.voivodeship?.toLowerCase() ?? '',
-        ];
+          mep.profession ?? '',
+          mep.districtName ?? '',
+          mep.voivodeship ?? '',
+        ].map(normalize);
         const allMatch = tokens.every((token) => fields.some((field) => field.includes(token)));
         if (!allMatch) return false;
       }
@@ -111,57 +115,38 @@ export default function MepList({ meps, clubs }: MepListProps) {
     return pages;
   };
 
-  const pagination = totalPages > 1 ? (
-    <div className="flex items-center justify-center gap-2">
-      <button
-        onClick={() => goToPage(currentPage - 1)}
-        disabled={currentPage === 1}
-        className={`px-3 py-2 rounded-md text-sm font-medium ${
-          currentPage === 1
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-        }`}
-      >
-        Poprzednia
-      </button>
+  const pageButton = (active: boolean) =>
+    `min-w-9 h-9 px-3 rounded-lg text-sm font-medium tabular transition-colors ${
+      active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-white hover:ring-1 hover:ring-slate-200'
+    }`;
 
+  const pagination = totalPages > 1 ? (
+    <nav aria-label="Strony wyników" className="flex items-center justify-center gap-1 flex-wrap">
+      <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className={`${pageButton(false)} disabled:opacity-40 disabled:pointer-events-none`}>
+        ← Poprzednia
+      </button>
       {getPageNumbers().map((page, index) =>
         page === '...' ? (
-          <span key={`ellipsis-${index}`} className="px-2 text-gray-500">
-            ...
-          </span>
+          <span key={`ellipsis-${index}`} className="px-1 text-slate-400">…</span>
         ) : (
           <button
             key={page}
             onClick={() => goToPage(page as number)}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
-              currentPage === page
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-            }`}
+            aria-current={currentPage === page ? 'page' : undefined}
+            className={pageButton(currentPage === page)}
           >
             {page}
           </button>
-        )
+        ),
       )}
-
-      <button
-        onClick={() => goToPage(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className={`px-3 py-2 rounded-md text-sm font-medium ${
-          currentPage === totalPages
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-        }`}
-      >
-        Następna
+      <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className={`${pageButton(false)} disabled:opacity-40 disabled:pointer-events-none`}>
+        Następna →
       </button>
-    </div>
+    </nav>
   ) : null;
 
   return (
     <div>
-      {/* Filters */}
       <MepFilters
         clubs={clubs}
         onSearchChange={handleSearchChange}
@@ -169,47 +154,21 @@ export default function MepList({ meps, clubs }: MepListProps) {
         onActiveChange={handleActiveChange}
       />
 
-      {/* Results count */}
-      <div className="mb-4 text-sm text-gray-600">
-        Pokazuję {currentMeps.length} z {filteredMeps.length} posłów
-        {filteredMeps.length !== meps.length && ` (odfiltrowano z ${meps.length} łącznie)`}
-      </div>
+      <p className="mb-4 text-sm text-slate-500">
+        {formatNumber(filteredMeps.length)} {filteredMeps.length === meps.length ? 'posłów' : `z ${formatNumber(meps.length)} posłów`}
+      </p>
 
-      {/* MEP Grid */}
       {currentMeps.length > 0 ? (
         <>
-          <div className="mb-6">{pagination}</div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {currentMeps.map((mep) => (
               <MepCard key={mep.id} mep={mep} clubColor={mep.club ? clubColorMap[mep.club] : undefined} />
             ))}
           </div>
-
-          <div className="mt-6">{pagination}</div>
+          <div className="mt-8">{pagination}</div>
         </>
       ) : (
-        // No results
-        <div className="text-center py-12">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Nie znaleziono posłów</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Spróbuj zmienić kryteria wyszukiwania
-          </p>
-        </div>
+        <EmptyState inCard title="Nie znaleziono posłów" description="Spróbuj zmienić kryteria wyszukiwania." />
       )}
     </div>
   );

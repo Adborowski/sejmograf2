@@ -5,7 +5,9 @@ import { useMeps } from '@/hooks/useMeps';
 import { MepRankRow } from '@/components/leaderboard/MepRankRow';
 import { AttendanceChart } from '@/components/leaderboard/AttendanceChart';
 import { CLUB_FULL_NAMES, CLUB_LOGOS, getClubColorMap } from '@/lib/clubStyles';
-import { NavBar } from '@/components/layout/NavBar';
+import Link from 'next/link';
+import { CARD_CLASS, Card, ErrorState, LoadingState, Page, SegmentedControl, Stat, StatGrid } from '@/components/ui';
+import { formatNumber, formatPercent, plural } from '@/lib/format';
 
 // Derive a stable color map from the known club list
 const ALL_SORTED_CLUBS = Object.keys(CLUB_FULL_NAMES).sort();
@@ -23,26 +25,25 @@ export default function ClubPage({ params }: { params: Promise<{ id: string }> }
   const fullName = CLUB_FULL_NAMES[club] ?? club;
   const logoUrl = CLUB_LOGOS[club];
 
-  const sorted = useMemo(() =>
-    [...meps]
-      .filter((m) => m.active && m.attendanceRate !== null && m.attendanceRate !== undefined)
-      .sort((a, b) =>
-        sortDir === 'desc'
-          ? b.attendanceRate - a.attendanceRate
-          : a.attendanceRate - b.attendanceRate
-      ),
-    [meps, sortDir]
+  const descSorted = useMemo(
+    () =>
+      [...meps]
+        .filter((m) => m.active && m.attendanceRate !== null && m.attendanceRate !== undefined)
+        .sort((a, b) => b.attendanceRate - a.attendanceRate),
+    [meps],
   );
+  const sorted = sortDir === 'desc' ? descSorted : [...descSorted].reverse();
 
+  // Ranks always follow highest-first order, whichever way the list is shown
   const rankMap = useMemo(() => {
     const map = new Map<number, number>();
     let rank = 1;
-    for (let i = 0; i < sorted.length; i++) {
-      if (i > 0 && sorted[i].attendanceRate !== sorted[i - 1].attendanceRate) rank++;
-      map.set(sorted[i].id, rank);
+    for (let i = 0; i < descSorted.length; i++) {
+      if (i > 0 && descSorted[i].attendanceRate !== descSorted[i - 1].attendanceRate) rank++;
+      map.set(descSorted[i].id, rank);
     }
     return map;
-  }, [sorted]);
+  }, [descSorted]);
 
   const stats = useMemo(() => {
     const totalVoted = meps.reduce((s, m) => s + (m.totalVoted ?? 0), 0);
@@ -53,95 +54,72 @@ export default function ClubPage({ params }: { params: Promise<{ id: string }> }
   }, [meps]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar backHref="/clubs" maxWidth="max-w-4xl" />
+    <Page>
+      <Link href="/clubs" className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900 mb-6">
+        ← Wszystkie kluby
+      </Link>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Club header */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6 flex items-center gap-5">
-          <img
-            src={logoUrl ?? '/club-placeholder.svg'}
-            alt={club}
-            className="w-16 h-16 object-contain flex-shrink-0"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{club}</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">{fullName}</h2>
+      <section className={`${CARD_CLASS} relative overflow-hidden p-6 sm:p-8 mb-6`}>
+        <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: color }} />
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center bg-slate-50 ring-1 ring-inset ring-slate-200/70">
+            <img src={logoUrl ?? '/club-placeholder.svg'} alt="" className="w-12 h-12 object-contain" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Klub · {club}</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">{fullName}</h1>
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+        {!loading && !error && (
+          <div className="mt-8 border-t border-slate-100 pt-6">
+            <StatGrid columns={4}>
+              <Stat emphasis label="Średnia obecność" value={stats.attendanceRate !== null ? formatPercent(stats.attendanceRate) : '—'} />
+              <Stat label="Aktywnych posłów" value={formatNumber(stats.activeCount)} />
+              <Stat label="Głosów oddanych" value={formatNumber(stats.totalVoted)} />
+              <Stat label="Głosowań łącznie" value={formatNumber(stats.totalVotings)} hint="suma po wszystkich posłach" />
+            </StatGrid>
           </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <p className="text-red-700">{error}</p>
-          </div>
-        ) : (
-          <>
-            {/* Summary stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow-md p-4 text-center">
-                <p className="text-2xl font-bold" style={{ color }}>
-                  {stats.attendanceRate !== null
-                    ? `${(stats.attendanceRate * 100).toFixed(1)}%`
-                    : '—'}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Średnia obecność</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-4 text-center">
-                <p className="text-2xl font-bold text-gray-800">{stats.activeCount}</p>
-                <p className="text-xs text-gray-500 mt-1">Aktywnych posłów</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-4 text-center">
-                <p className="text-2xl font-bold text-green-600">{stats.totalVoted.toLocaleString()}</p>
-                <p className="text-xs text-gray-500 mt-1">Głosowań oddanych</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-4 text-center">
-                <p className="text-2xl font-bold text-gray-600">{stats.totalVotings.toLocaleString()}</p>
-                <p className="text-xs text-gray-500 mt-1">Głosowań łącznie</p>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <AttendanceChart meps={allMeps} sittings={sittings} initialVisible={[club]} />
-            </div>
-
-            {/* Ranked member list */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-                <span className="text-xs text-gray-500">
-                  {sorted.length} {sorted.length === 1 ? 'poseł' : 'posłów'} wg frekwencji
-                </span>
-                <button
-                  onClick={() => setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  {sortDir === 'desc' ? '↓ Malejąco' : '↑ Rosnąco'}
-                </button>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {sorted.map((mep) => (
-                  <MepRankRow
-                    key={mep.id}
-                    rank={rankMap.get(mep.id)!}
-                    mep={mep}
-                    highlight={
-                      mep.attendanceRate >= 0.8 ? 'top'
-                      : mep.attendanceRate < 0.5 ? 'bottom'
-                      : 'neutral'
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-          </>
         )}
-      </main>
-    </div>
+      </section>
+
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message={error} />
+      ) : (
+        <div className="space-y-6">
+          <AttendanceChart meps={allMeps} sittings={sittings} initialVisible={[club]} />
+
+          <Card
+            padded={false}
+            title="Posłowie klubu"
+            description={`${sorted.length} ${plural(sorted.length, 'aktywny poseł', 'aktywnych posłów', 'aktywnych posłów')}, według obecności`}
+            actions={
+              <SegmentedControl
+                label="Kolejność"
+                value={sortDir}
+                onChange={setSortDir}
+                options={[
+                  { value: 'desc', label: 'Najwyższa' },
+                  { value: 'asc', label: 'Najniższa' },
+                ]}
+              />
+            }
+          >
+            <div className="divide-y divide-slate-100">
+              {sorted.map((mep) => (
+                <MepRankRow
+                  key={mep.id}
+                  rank={rankMap.get(mep.id)!}
+                  mep={mep}
+                  highlight={mep.attendanceRate >= 0.8 ? 'top' : mep.attendanceRate < 0.5 ? 'bottom' : 'neutral'}
+                />
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+    </Page>
   );
 }

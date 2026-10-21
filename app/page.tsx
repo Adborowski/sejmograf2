@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { NavBar } from "@/components/layout/NavBar";
+import { useMemo } from "react";
 import { useMeps } from "@/hooks/useMeps";
 import { AttendanceChart } from "@/components/leaderboard/AttendanceChart";
 import { ClubCards } from "@/components/leaderboard/ClubCards";
@@ -10,166 +9,152 @@ import { BiggestMovers } from "@/components/dashboard/BiggestMovers";
 import { RecentReviews } from "@/components/dashboard/RecentReviews";
 import { FEATURES } from "@/lib/features";
 import { useLatestSittingDate } from "@/hooks/useLatestSittingDate";
+import { ButtonLink, Card, ErrorState, LoadingState, Page } from "@/components/ui";
+import { formatDate, formatNumber, formatPercent } from "@/lib/format";
 
-const LEADERBOARD_SIZE = 20;
+const LEADERBOARD_SIZE = 10;
 
-export default function LeaderboardPage() {
+function HeroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-2xl sm:text-3xl font-semibold tracking-tight tabular text-white">{value}</p>
+      <p className="text-xs sm:text-sm text-blue-200/80 mt-1">{label}</p>
+    </div>
+  );
+}
+
+export default function HomePage() {
   const { meps, sittings, loading, error } = useMeps();
   const { sitting, date } = useLatestSittingDate();
 
-  const activeSorted = [...meps]
-    .filter(
-      (m) =>
-        m.active && m.attendanceRate !== null && m.attendanceRate !== undefined,
-    )
-    .sort((a, b) => b.attendanceRate - a.attendanceRate);
+  const activeSorted = useMemo(
+    () =>
+      [...meps]
+        .filter((m) => m.active && m.attendanceRate !== null && m.attendanceRate !== undefined)
+        .sort((a, b) => b.attendanceRate - a.attendanceRate),
+    [meps],
+  );
 
   const top = activeSorted.slice(0, LEADERBOARD_SIZE);
   const bottom = activeSorted.slice(-LEADERBOARD_SIZE).reverse();
 
   // Dense ranking: ties share the same rank; next distinct value increments by 1.
-  const rankMap = new Map<number, number>();
-  let currentRank = 1;
-  for (let i = 0; i < activeSorted.length; i++) {
-    if (
-      i > 0 &&
-      activeSorted[i].attendanceRate !== activeSorted[i - 1].attendanceRate
-    ) {
-      currentRank++;
+  const rankMap = useMemo(() => {
+    const map = new Map<number, number>();
+    let currentRank = 1;
+    for (let i = 0; i < activeSorted.length; i++) {
+      if (i > 0 && activeSorted[i].attendanceRate !== activeSorted[i - 1].attendanceRate) currentRank++;
+      map.set(activeSorted[i].id, currentRank);
     }
-    rankMap.set(activeSorted[i].id, currentRank);
-  }
+    return map;
+  }, [activeSorted]);
 
-  const mepNameMap = new Map(
-    meps.map((m: any) => [m.id, m.fullName as string]),
-  );
+  // Headline numbers for the hero: weighted attendance of active MEPs
+  const headline = useMemo(() => {
+    const voted = activeSorted.reduce((s, m) => s + (m.totalVoted ?? 0), 0);
+    const votings = activeSorted.reduce((s, m) => s + (m.totalVotings ?? 0), 0);
+    return { attendance: votings > 0 ? voted / votings : null, active: activeSorted.length };
+  }, [activeSorted]);
+
+  const mepNameMap = new Map(meps.map((m: any) => [m.id, m.fullName as string]));
   const getMepName = (id: number) => mepNameMap.get(id) ?? null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar
-        subtitle="Monitor Polskiego Sejmu"
-        navLinks={[
-          { href: "/leaderboard", label: "Pełny ranking" },
-          { href: "/clubs", label: "Przeglądaj kluby" },
-          { href: "/search", label: "Szukaj posłów" },
-          { href: "/ministerstwa", label: "Ministerstwa" },
-        ]}
-      />
+    <Page>
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-3xl bg-brand-900 px-6 py-10 sm:px-10 sm:py-14 mb-10">
+        {/* Decorative glow + grid, purely visual */}
+        <div aria-hidden="true" className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-[var(--color-accent)]/25 blur-3xl" />
+        <div aria-hidden="true" className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero */}
-        <div className="bg-blue-600 text-white rounded-xl shadow-lg px-8 py-7 mb-8">
-          <h2 className="text-2xl font-bold mb-2">
-            Czy Twój poseł chodzi na głosowania?
-          </h2>
-          <p className="text-blue-100 text-base leading-relaxed max-w-2xl">
-            Sejmograf śledzi obecność wszystkich posłów na głosowaniach
-            sejmowych. Sprawdź, kto pojawia się regularnie, a kto opuszcza
-            posiedzenia{FEATURES.reviews ? ' — i wyraź swoją opinię' : ''}.
+        <div className="relative max-w-3xl">
+          <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-100 ring-1 ring-inset ring-white/15">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            {date && sitting ? `Dane do posiedzenia nr ${sitting} · ${formatDate(date)}` : "Sejm RP · X kadencja"}
           </p>
-          {date && sitting && (
-            <p className="mt-4 text-xs text-blue-200">
-              Dane aktualne do posiedzenia nr {sitting} ({date})
-            </p>
-          )}
+          <h1 className="mt-5 text-4xl sm:text-5xl font-semibold tracking-tight text-white leading-[1.08]">
+            Czy Twój poseł <span className="text-[#ff6b73]">naprawdę</span> pracuje?
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-blue-100/80 leading-relaxed max-w-2xl">
+            Obecność na głosowaniach, lojalność wobec klubu, wystąpienia i interpelacje — wszystkich 460 posłów,
+            w jednym miejscu. Prosto z danych Sejmu.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <ButtonLink href="/search" variant="inverse">Znajdź swojego posła →</ButtonLink>
+            <ButtonLink href="/glosowania" variant="ghost" className="text-white hover:bg-white/10 ring-1 ring-inset ring-white/20">
+              Jak głosowano?
+            </ButtonLink>
+          </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600">Ładowanie...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <p className="text-red-700">{error}</p>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Ranking Obecności
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Dla posiedzeń wielodniowych jako data referencyjna przyjmowany
-                jest ostatni dzień.
-              </p>
-            </div>
+        <div className="relative mt-10 grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-white/10 pt-6">
+          <HeroStat label="średnia obecność" value={headline.attendance !== null ? formatPercent(headline.attendance) : "—"} />
+          <HeroStat label="aktywnych posłów" value={headline.active ? formatNumber(headline.active) : "—"} />
+          <HeroStat label="posiedzeń w kadencji" value={sittings.length ? formatNumber(sittings.length) : "—"} />
+          <HeroStat label="głosowań w kadencji" value={activeSorted[0]?.totalVotings ? formatNumber(activeSorted[0].totalVotings) : "—"} />
+        </div>
+      </section>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-8">
-              <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-200 bg-green-50">
-                  <h3 className="font-semibold text-green-800">
-                    Najlepsza obecność
-                  </h3>
-                  <p className="text-xs text-green-600 mt-0.5">
-                    Top {LEADERBOARD_SIZE} aktywnych posłów
-                  </p>
-                </div>
-                <div className="divide-y divide-gray-100">
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message={error} />
+      ) : (
+        <div className="space-y-10">
+          <section>
+            <div className="flex items-end justify-between gap-4 flex-wrap mb-4">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Ranking obecności</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Udział w głosowaniach od początku kadencji, aktywni posłowie.
+                </p>
+              </div>
+              <ButtonLink href="/leaderboard" variant="secondary" size="sm">Pełny ranking →</ButtonLink>
+            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <Card
+                padded={false}
+                title={<span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500" />Najwyższa obecność</span>}
+                description={`Top ${LEADERBOARD_SIZE}`}
+              >
+                <div className="divide-y divide-slate-100">
                   {top.map((mep) => (
-                    <MepRankRow
-                      key={mep.id}
-                      rank={rankMap.get(mep.id)!}
-                      mep={mep}
-                      highlight="top"
-                    />
+                    <MepRankRow key={mep.id} rank={rankMap.get(mep.id)!} mep={mep} highlight="top" />
                   ))}
                 </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-200 bg-red-50">
-                  <h3 className="font-semibold text-red-800">
-                    Najniższa obecność
-                  </h3>
-                  <p className="text-xs text-red-500 mt-0.5">
-                    Ostatnie {LEADERBOARD_SIZE} aktywnych posłów
-                  </p>
-                </div>
-                <div className="divide-y divide-gray-100">
+              </Card>
+              <Card
+                padded={false}
+                title={<span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-rose-500" />Najniższa obecność</span>}
+                description={`Ostatnie ${LEADERBOARD_SIZE}`}
+              >
+                <div className="divide-y divide-slate-100">
                   {bottom.map((mep) => (
-                    <MepRankRow
-                      key={mep.id}
-                      rank={rankMap.get(mep.id)!}
-                      mep={mep}
-                      highlight="bottom"
-                    />
+                    <MepRankRow key={mep.id} rank={rankMap.get(mep.id)!} mep={mep} highlight="bottom" />
                   ))}
                 </div>
-              </div>
+              </Card>
             </div>
+          </section>
 
-            <div className="flex justify-center mb-8">
-              <Link
-                href="/leaderboard"
-                className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-              >
-                Zobacz pełny ranking →
-              </Link>
-            </div>
+          <BiggestMovers />
 
-            <ClubCards meps={meps} />
+          <ClubCards meps={meps} />
 
-            <div className="flex justify-center mt-2 mb-8">
-              <Link
-                href="/clubs"
-                className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-              >
-                Przeglądaj kluby →
-              </Link>
-            </div>
+          <AttendanceChart meps={meps} sittings={sittings} />
 
-            <AttendanceChart meps={meps} sittings={sittings} />
-          </>
-        )}
-
-        {/* Load independently */}
-        <BiggestMovers />
-        {FEATURES.reviews && <RecentReviews getMepName={getMepName} />}
-      </main>
-    </div>
+          {FEATURES.reviews && <RecentReviews getMepName={getMepName} />}
+        </div>
+      )}
+    </Page>
   );
 }

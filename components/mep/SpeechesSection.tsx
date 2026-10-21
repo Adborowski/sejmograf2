@@ -1,8 +1,7 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import { MepSpeeches } from '@/types/mep';
-import { getStatementTopic, statementUrl } from '@/lib/sejmApi';
+import { statementUrl } from '@/lib/sejmApi';
+import { Badge, Card, SectionLabel, Stat, StatGrid } from '@/components/ui';
+import { formatDate, formatNumber } from '@/lib/format';
 
 const formatDuration = (seconds: number) => {
   const minutes = Math.round(seconds / 60);
@@ -22,98 +21,54 @@ interface SpeechesSectionProps {
 }
 
 export function SpeechesSection({ speeches }: SpeechesSectionProps) {
-  // undefined = still loading, null = no agenda item / failed
-  const [topics, setTopics] = useState<Record<string, string | null>>({});
-  const recent = speeches?.recent ?? [];
-  const recentKey = recent.map((r) => `${r.proceeding}/${r.date}/${r.num}`).join(',');
-
-  useEffect(() => {
-    let cancelled = false;
-    for (const r of recent) {
-      const key = `${r.proceeding}/${r.date}/${r.num}`;
-      getStatementTopic(r.proceeding, r.date, r.num)
-        .catch(() => null)
-        .then((topic) => {
-          if (!cancelled) setTopics((t) => ({ ...t, [key]: topic }));
-        });
-    }
-    return () => { cancelled = true; };
-    // recentKey captures the list's identity
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recentKey]);
-
   // Docs written before the speeches step existed have no `speeches` field
   if (!speeches) return null;
 
   const total = speeches.speeches + speeches.official + speeches.written;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h3 className="text-base font-semibold text-gray-900 mb-4">Wystąpienia na sali plenarnej</h3>
-
+    <Card id="wystapienia" title="Wystąpienia na sali plenarnej">
       {total === 0 ? (
-        <p className="text-sm text-gray-500">Brak wystąpień na posiedzeniach Sejmu w tej kadencji.</p>
+        <p className="text-sm text-slate-500">Brak wystąpień na posiedzeniach Sejmu w tej kadencji.</p>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-4 mb-2 text-center">
-            <div>
-              <p className="text-2xl font-bold text-blue-600">{speeches.speeches.toLocaleString()}</p>
-              <p className="text-xs text-gray-500 mt-1">Wystąpienia</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-blue-600">{formatDuration(speeches.seconds)}</p>
-              <p className="text-xs text-gray-500 mt-1">Łączny czas</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-700">{speeches.daysSpoken}</p>
-              <p className="text-xs text-gray-500 mt-1">Dni z wystąpieniem</p>
-            </div>
-          </div>
-          {(speeches.written > 0 || speeches.official > 0 || speeches.rapporteur > 0) && (
-            <p className="text-xs text-gray-500 text-center mb-5">
-              {[
-                speeches.rapporteur > 0 && `${speeches.rapporteur} jako sprawozdawca`,
+          <StatGrid>
+            <Stat emphasis label="Wystąpienia" value={formatNumber(speeches.speeches)} hint={speeches.rapporteur > 0 ? `${speeches.rapporteur} jako sprawozdawca` : undefined} />
+            <Stat label="Łączny czas" value={formatDuration(speeches.seconds)} />
+            <Stat
+              label="Dni z wystąpieniem"
+              value={formatNumber(speeches.daysSpoken)}
+              hint={[
                 speeches.written > 0 && `${speeches.written} na piśmie`,
                 speeches.official > 0 && `${speeches.official} jako członek rządu`,
-              ].filter(Boolean).join(' · ')}
-            </p>
-          )}
+              ].filter(Boolean).join(' · ') || undefined}
+            />
+          </StatGrid>
 
-          <p className="text-gray-400 text-xs uppercase tracking-wide mb-2 mt-5">Ostatnie</p>
-          <ul className="divide-y divide-gray-100">
-            {recent.map((r) => {
-              const key = `${r.proceeding}/${r.date}/${r.num}`;
-              const topic = topics[key];
-              return (
-                <li key={key} className="py-2.5">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-1 flex-wrap">
-                    <span>Posiedzenie {r.proceeding}</span>
-                    <span>·</span>
-                    <span>{r.date}</span>
-                    {KIND_LABEL[r.kind] && (
-                      <span className="px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">
-                        {KIND_LABEL[r.kind]}
-                      </span>
-                    )}
-                  </div>
+          <div className="mt-6">
+            <SectionLabel>Ostatnie</SectionLabel>
+            <ul className="divide-y divide-slate-100">
+              {speeches.recent.map((r) => (
+                <li key={`${r.proceeding}/${r.date}/${r.num}`} className="py-3">
+                  <p className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+                    <span>{formatDate(r.date)} · posiedzenie {r.proceeding}</span>
+                    {KIND_LABEL[r.kind] && <Badge>{KIND_LABEL[r.kind]}</Badge>}
+                  </p>
                   <a
                     href={statementUrl(r.proceeding, r.date, r.num)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-gray-800 hover:text-blue-600 hover:underline"
+                    className="text-sm text-slate-800 hover:text-blue-700 hover:underline line-clamp-2"
                   >
-                    {topic === undefined ? (
-                      <span className="inline-block h-4 w-3/4 bg-gray-100 rounded animate-pulse align-middle" />
-                    ) : (
-                      topic ?? 'Wystąpienie'
-                    )}
+                    {/* Topics are fetched by the nightly pipeline; a new statement may not have one yet */}
+                    {r.topic || 'Wystąpienie — zobacz treść'}
                   </a>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          </div>
         </>
       )}
-    </div>
+    </Card>
   );
 }

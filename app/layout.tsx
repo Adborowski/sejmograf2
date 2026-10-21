@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import { Providers } from "@/providers/Providers";
 import { Analytics } from "@vercel/analytics/next";
+import { NavBar } from "@/components/layout/NavBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,29 +27,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pl">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
           <Analytics />
-          {children}
-          <footer className="bg-white">
-            <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-gray-400">
-              <span>© {new Date().getFullYear()} Adam Borowski Digital</span>
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/contact"
-                  className="hover:text-gray-600 transition-colors"
-                >
-                  Kontakt
-                </Link>
-                <Link
-                  href="/privacy"
-                  className="hover:text-gray-600 transition-colors"
-                >
-                  Polityka prywatności
-                </Link>
+          <NavBar />
+          <div className="min-h-[calc(100vh-3.5rem)]">{children}</div>
+          <footer className="border-t border-slate-200 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm">
+              <div>
+                <p className="font-semibold tracking-tight text-slate-900">Sejmograf</p>
+                <p className="text-slate-500 mt-0.5">
+                  Niezależny monitor pracy posłów. Dane:{" "}
+                  <a href="https://api.sejm.gov.pl" target="_blank" rel="noopener noreferrer" className="underline decoration-slate-300 hover:text-slate-800">
+                    API Sejmu RP
+                  </a>
+                  .
+                </p>
+              </div>
+              <div className="flex items-center gap-5 text-slate-500">
+                <Link href="/contact" className="hover:text-slate-900 transition-colors">Kontakt</Link>
+                <Link href="/privacy" className="hover:text-slate-900 transition-colors">Polityka prywatności</Link>
+                <span className="text-slate-400">© {new Date().getFullYear()} Adam Borowski Digital</span>
               </div>
             </div>
           </footer>

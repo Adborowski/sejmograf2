@@ -85,15 +85,64 @@ export const getRecentQuestions = async (mepId: number, count = 10): Promise<Que
 export const statementUrl = (proceeding: number, date: string, num: number) =>
   `${SEJM_API}/proceedings/${proceeding}/${date}/transcripts/${num}`;
 
+
+export interface VotingDetail {
+  sitting: number;
+  num: number;
+  date: string;
+  title: string;
+  topic: string | null;
+  kind: string;
+  yes: number;
+  no: number;
+  abstain: number;
+  notParticipating: number;
+  // Motion passed as worded (e.g. for Senate amendments the motion is to reject them)
+  passed: boolean | null;
+  pdfUrl: string;
+  votes: Array<{ id: number; name: string; club: string; vote: string }>;
+}
+
+interface ApiVotingDetail {
+  sitting: number;
+  votingNumber: number;
+  date: string;
+  title: string;
+  topic?: string;
+  kind: string;
+  yes: number;
+  no: number;
+  abstain: number;
+  notParticipating: number;
+  majorityVotes?: number;
+  votes?: Array<{ MP: number; firstName: string; lastName: string; club: string; vote: string }>;
+}
+
 /**
- * Agenda item a statement was made under, read from its transcript HTML
- * (<p class="punkt-tytul">). Null if the page has no agenda item.
+ * One voting with every MEP's vote, live from the Sejm API.
  */
-export const getStatementTopic = async (proceeding: number, date: string, num: number): Promise<string | null> => {
-  const res = await fetch(statementUrl(proceeding, date, num));
+export const getVotingDetail = async (sitting: number, num: number): Promise<VotingDetail> => {
+  const res = await fetch(`${SEJM_API}/votings/${sitting}/${num}`);
   if (!res.ok) throw new Error(`Sejm API: HTTP ${res.status}`);
-  const html = await res.text();
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  const topic = doc.querySelector('.punkt-tytul')?.textContent?.replace(/\s+/g, ' ').trim();
-  return topic || null;
+  const d: ApiVotingDetail = await res.json();
+  return {
+    sitting: d.sitting,
+    num: d.votingNumber,
+    date: d.date,
+    title: d.title,
+    topic: d.topic || null,
+    kind: d.kind,
+    yes: d.yes,
+    no: d.no,
+    abstain: d.abstain,
+    notParticipating: d.notParticipating,
+    passed: d.kind === 'ELECTRONIC' && d.majorityVotes != null ? d.yes >= d.majorityVotes : null,
+    pdfUrl: `${SEJM_API}/votings/${sitting}/${num}/pdf`,
+    votes: (d.votes ?? []).map((v) => ({
+      id: v.MP,
+      name: `${v.firstName} ${v.lastName}`,
+      club: v.club,
+      vote: v.vote,
+    })),
+  };
 };

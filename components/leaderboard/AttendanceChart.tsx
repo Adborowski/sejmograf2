@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { getClubColorMap } from '@/lib/clubStyles';
 import { SittingTotals } from '@/types/mep';
+import { Card } from '@/components/ui';
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -103,21 +104,20 @@ export function AttendanceChart({
   const maxVal = visibleValues.length ? Math.min(100, Math.ceil(Math.max(...visibleValues) + 1)) : 100;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-5 mb-6">
-      <h3 className="font-semibold text-gray-900">Obecność w czasie</h3>
-      <p className="text-xs text-gray-500 mt-0.5 mb-4">
-        Średnia ważona na posiedzenie · {chartData.length} posiedzeń · uwzględnia posłów nieaktywnych (statystyki obejmują wyłącznie okres aktywnego mandatu)
-      </p>
+    <Card
+      title="Obecność w czasie"
+      description={`Średnia ważona na posiedzenie · ${chartData.length} posiedzeń · kliknij klub, aby go pokazać lub ukryć`}
+    >
 
       {/* Club toggle legend */}
       <div className="flex flex-wrap gap-2 mb-4">
         {/* Overall toggle */}
         <button
           onClick={() => toggle('overall')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-opacity ${
-            showOverall ? 'opacity-100' : 'opacity-35'
+          aria-pressed={showOverall}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ring-1 ring-inset transition-all ${
+            showOverall ? 'bg-slate-100 text-slate-700 ring-slate-300' : 'text-slate-400 ring-slate-200'
           }`}
-          style={{ borderColor: '#6b7280', color: '#6b7280' }}
         >
           <span className="w-3 h-0.5 rounded-full inline-block" style={{ backgroundColor: '#6b7280' }} />
           Wszyscy posłowie
@@ -129,12 +129,13 @@ export function AttendanceChart({
             <button
               key={club}
               onClick={() => toggle(club)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-opacity ${
-                visible ? 'opacity-100' : 'opacity-35'
+              aria-pressed={visible}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ring-1 ring-inset transition-all ${
+                visible ? 'text-slate-800' : 'text-slate-400 ring-slate-200'
               }`}
-              style={{ borderColor: color, color }}
+              style={visible ? { backgroundColor: `${color}14`, boxShadow: `inset 0 0 0 1px ${color}55` } : undefined}
             >
-              <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: color }} />
+              <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: visible ? color : '#cbd5e1' }} />
               {club}
             </button>
           );
@@ -143,18 +144,18 @@ export function AttendanceChart({
 
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+          <CartesianGrid stroke="#f1f5f9" vertical={false} />
           <XAxis
             dataKey="sitting"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: '#94a3b8' }}
             tickLine={false}
             axisLine={false}
             minTickGap={40}
-            label={{ value: 'Posiedzenie', position: 'insideBottomRight', offset: -4, fontSize: 11, fill: '#d1d5db' }}
+            label={{ value: 'Posiedzenie', position: 'insideBottomRight', offset: -4, fontSize: 11, fill: '#cbd5e1' }}
           />
           <YAxis
             domain={[minVal, maxVal]}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: '#94a3b8' }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v) => `${v}%`}
@@ -190,6 +191,6 @@ export function AttendanceChart({
           ))}
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   );
 }

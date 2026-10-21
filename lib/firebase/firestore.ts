@@ -8,7 +8,8 @@ import {
   orderBy,
   limit,
 } from 'firebase/firestore';
-import { LeaderboardSnapshot, LeaderboardSnapshotMeta, MepList, MinistryStat } from '@/types/mep';
+import { ClubAgreementData, LeaderboardSnapshot, LeaderboardSnapshotMeta, MepList, MinistryStat } from '@/types/mep';
+import { decodeVotingIndex, VotingIndex } from '@/lib/votings';
 import { firestore } from './config';
 
 // Get Firestore instance
@@ -157,5 +158,35 @@ export const getMinistryStats = async (): Promise<{ computedOn: string; ministri
     return docSnap.data() as { computedOn: string; ministries: MinistryStat[] };
   } catch (error: any) {
     throw new Error(error.message || 'Failed to fetch ministry stats');
+  }
+};
+
+/**
+ * Search index of all votings (gzipped bytes in stats/votings_index), fetched once per session
+ */
+let votingIndexPromise: Promise<VotingIndex> | null = null;
+
+export const getVotingIndex = (): Promise<VotingIndex> => {
+  votingIndexPromise ??= getDoc(doc(db, 'stats', 'votings_index'))
+    .then((snap) => {
+      if (!snap.exists()) throw new Error('Brak indeksu głosowań');
+      return decodeVotingIndex(snap.data().gz.toUint8Array());
+    })
+    .catch((error) => {
+      votingIndexPromise = null;
+      throw new Error(error.message || 'Failed to fetch voting index');
+    });
+  return votingIndexPromise;
+};
+
+/**
+ * Club × club agreement matrices (whole term and recent months)
+ */
+export const getClubAgreement = async (): Promise<ClubAgreementData | null> => {
+  try {
+    const docSnap = await getDoc(doc(db, 'stats', 'club_agreement'));
+    return docSnap.exists() ? (docSnap.data() as ClubAgreementData) : null;
+  } catch (error: any) {
+    throw new Error(error.message || 'Failed to fetch club agreement');
   }
 };

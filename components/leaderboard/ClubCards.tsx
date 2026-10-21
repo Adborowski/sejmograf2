@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { getClubColorMap, CLUB_FULL_NAMES } from '@/lib/clubStyles';
+import { Card } from '@/components/ui';
+import { formatNumber, formatPercent, plural } from '@/lib/format';
 
 interface ClubStat {
   club: string;
@@ -50,51 +52,39 @@ export function ClubCards({ meps }: { meps: any[] }) {
   if (clubs.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-5 mb-6">
-      <h3 className="font-semibold text-gray-900">Obecność wg klubu</h3>
-      <p className="text-xs text-gray-500 mt-0.5 mb-4">
-        Średnia ważona dla całej X kadencji · uwzględnia posłów nieaktywnych (statystyki obejmują wyłącznie okres aktywnego mandatu)
-      </p>
-
+    <Card
+      title="Obecność wg klubu"
+      description="Średnia ważona dla całej kadencji, łącznie z posłami, którzy już nie zasiadają w Sejmie (liczy się okres ich mandatu)."
+      actions={<Link href="/clubs" className="text-sm font-medium text-blue-700 hover:text-blue-800">Wszystkie kluby →</Link>}
+    >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {clubs.map(({ club, color, activeMemberCount, totalVoted, totalVotings, attendanceRate }) => {
-          const pct = (attendanceRate * 100).toFixed(1);
-          return (
-            <Link
-              key={club}
-              href={`/club/${encodeURIComponent(club)}`}
-              className="block border rounded-lg px-4 py-3 hover:shadow-md transition-shadow"
-              style={{ borderColor: `${color}40` }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span className="font-semibold text-gray-900 text-sm truncate">{CLUB_FULL_NAMES[club] ?? club}</span>
-                </div>
-                <span className="text-base font-bold tabular-nums ml-2 flex-shrink-0" style={{ color }}>
-                  {pct}%
+        {clubs.map(({ club, color, activeMemberCount, totalVoted, totalVotings, attendanceRate }) => (
+          <Link
+            key={club}
+            href={`/club/${encodeURIComponent(club)}`}
+            className="group block rounded-xl px-4 py-3 ring-1 ring-inset ring-slate-200 hover:ring-slate-300 hover:bg-slate-50/60 transition-all"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                <span className="font-medium text-slate-900 text-sm truncate group-hover:text-blue-700">
+                  {CLUB_FULL_NAMES[club] ?? club}
                 </span>
               </div>
-
-              {/* Attendance bar */}
-              <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
-                <div
-                  className="h-1.5 rounded-full"
-                  style={{ width: `${attendanceRate * 100}%`, backgroundColor: color }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>{activeMemberCount} {activeMemberCount === 1 ? 'poseł' : 'posłów'}</span>
-                <span>{totalVoted.toLocaleString()} / {totalVotings.toLocaleString()} głosowań</span>
-              </div>
-            </Link>
-          );
-        })}
+              <span className="text-base font-semibold tabular ml-2 flex-shrink-0 text-slate-900">
+                {formatPercent(attendanceRate)}
+              </span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2">
+              <div className="h-1.5 rounded-full" style={{ width: `${attendanceRate * 100}%`, backgroundColor: color }} />
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-400 tabular">
+              <span>{activeMemberCount} {plural(activeMemberCount, 'poseł', 'posłów', 'posłów')}</span>
+              <span>{formatNumber(totalVoted)} / {formatNumber(totalVotings)}</span>
+            </div>
+          </Link>
+        ))}
       </div>
-    </div>
+    </Card>
   );
 }

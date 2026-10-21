@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { NavBar } from '@/components/layout/NavBar';
+import { Button, CARD_CLASS, ErrorState, Label, Page, PageHeader, Spinner, TextArea, TextInput } from '@/components/ui';
 
 export default function ContactPage() {
   const [name, setName] = useState('');
@@ -51,95 +51,60 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar backHref="/" />
+    <Page width="narrow">
+      <PageHeader
+        eyebrow="Kontakt"
+        title="Napisz do nas"
+        description="Sejmograf ciągle się rozwija. Chętnie poznamy Twoją opinię, pomysły na nowe funkcje i zgłoszenia błędów."
+      />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-6 sm:p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Kontakt</h1>
-          <p className="text-gray-600 mb-8">
-            Sejmograf jest aplikacją w ciągłym rozwoju. Chętnie słyszymy Twoją opinię, sugestie dotyczące nowych funkcji oraz zgłoszenia błędów. Wyślij nam wiadomość, a postaramy się odpowiedzieć tak szybko, jak to możliwe.
-          </p>
+      <div className={`${CARD_CLASS} p-6 sm:p-8`}>
+        {success ? (
+          <div className="rounded-xl bg-emerald-50 ring-1 ring-emerald-200 p-6 text-center">
+            <p className="text-emerald-900 font-medium">Dziękujemy! Wiadomość została wysłana.</p>
+            <p className="text-emerald-700 text-sm mt-2">Odpowiemy najszybciej, jak to możliwe.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && <ErrorState title="Nie udało się wysłać" message={error} />}
 
-          {success ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-              <p className="text-green-900 font-medium">Dziękujemy! Wiadomość została wysłana.</p>
-              <p className="text-green-700 text-sm mt-2">Odpowiemy na Twoją wiadomość jak najszybciej.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <Label htmlFor="name">Imię i nazwisko</Label>
+                <TextInput id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jan Kowalski" disabled={loading} />
+              </div>
+              <div>
+                <Label htmlFor="email">Adres e-mail</Label>
+                <TextInput id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jan@example.com" disabled={loading} />
+              </div>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              )}
 
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Imię i nazwisko
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Twoje imię i nazwisko"
-                  className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Adres e-mail
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="twój.email@example.com"
-                  className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                  Wiadomość
-                </label>
-                <textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Podziel się swoją opinią, sugestiami dotyczącymi nowych funkcji lub zgłoś błędy..."
-                  rows={6}
-                  className="text-neutral-950 placeholder-neutral-500 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  disabled={loading}
-                />
-              </div>
-
-              <button
-                type="submit"
+            <div>
+              <Label htmlFor="message">Wiadomość</Label>
+              <TextArea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Twoja opinia, pomysł albo opis błędu…"
+                rows={6}
+                className="resize-none"
                 disabled={loading}
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Wysyłanie...
-                  </>
-                ) : (
-                  'Wyślij'
-                )}
-              </button>
-            </form>
-          )}
-        </div>
-      </main>
-    </div>
+              />
+            </div>
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? (
+                <>
+                  <Spinner size="sm" />
+                  Wysyłanie…
+                </>
+              ) : (
+                'Wyślij wiadomość'
+              )}
+            </Button>
+          </form>
+        )}
+      </div>
+    </Page>
   );
 }

@@ -2,115 +2,97 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FaSatelliteDish } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { FEATURES } from '@/lib/features';
 
-interface NavBarProps {
-  subtitle?: string;
-  backHref?: string;
-  navLinks?: Array<{ href: string; label: string }>;
-  maxWidth?: 'max-w-4xl' | 'max-w-5xl' | 'max-w-7xl';
-}
+// Site-wide navigation, rendered once by the root layout
+const LINKS = [
+  { href: '/leaderboard', label: 'Ranking', match: ['/leaderboard'] },
+  { href: '/search', label: 'Posłowie', match: ['/search', '/mep'] },
+  { href: '/clubs', label: 'Kluby', match: ['/clubs', '/club'] },
+  { href: '/glosowania', label: 'Głosowania', match: ['/glosowania'] },
+  { href: '/ministerstwa', label: 'Ministerstwa', match: ['/ministerstwa'] },
+];
 
-export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5xl' }: NavBarProps) {
+const isActive = (pathname: string, match: string[]) =>
+  match.some((m) => pathname === m || pathname.startsWith(`${m}/`));
+
+export function NavBar() {
+  const pathname = usePathname() ?? '/';
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, signOut, loading: authLoading } = useAuth();
   const showAuth = FEATURES.reviews && !authLoading;
 
   return (
-    <nav className="bg-white shadow-sm">
-      <div className={`${maxWidth} mx-auto px-4 sm:px-6 lg:px-8`}>
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-4">
-            {backHref && (
-              <Link
-                href={backHref}
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-              >
-                ← Wróć
-              </Link>
-            )}
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <FaSatelliteDish size={20} color="#ef4444" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-neutral-950 text-xl font-bold leading-tight">Sejmograf</p>
-                {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
-              </div>
-            </div>
-          </div>
+    <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/70">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14">
+          <Link href="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+            <span className="w-8 h-8 rounded-lg bg-brand-900 flex items-center justify-center">
+              <FaSatelliteDish size={16} className="text-[var(--color-accent)]" aria-hidden="true" />
+            </span>
+            <span className="text-[17px] font-semibold tracking-tight text-slate-900">Sejmograf</span>
+          </Link>
 
-          <div className="flex items-center gap-2">
-            {/* Desktop: nav links */}
-            {navLinks.length > 0 && (
-              <div className="hidden sm:flex items-center gap-2">
-                {navLinks.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors shadow-sm"
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* Auth button (desktop) */}
+          <div className="hidden md:flex items-center gap-1">
+            {LINKS.map(({ href, label, match }) => {
+              const active = isActive(pathname, match);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
             {showAuth && (
-              <div className="hidden sm:block">
-                {user ? (
-                  <button
-                    onClick={() => signOut()}
-                    className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    Wyloguj się
-                  </button>
-                ) : (
-                  <Link
-                    href="/login"
-                    className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    Zaloguj się
-                  </Link>
-                )}
-              </div>
-            )}
-
-            {/* Mobile: hamburger button */}
-            {(navLinks.length > 0 || showAuth) && (
-              <button
-                className="sm:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                onClick={() => setMenuOpen((o) => !o)}
-                aria-label="Toggle menu"
-              >
-                {menuOpen ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                )}
-              </button>
+              user ? (
+                <button onClick={() => signOut()} className="ml-2 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
+                  Wyloguj się
+                </button>
+              ) : (
+                <Link href="/login" className="ml-2 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
+                  Zaloguj się
+                </Link>
+              )
             )}
           </div>
+
+          <button
+            className="md:hidden p-2 -mr-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={menuOpen ? 'Zamknij menu' : 'Otwórz menu'}
+            aria-expanded={menuOpen}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" />
+              )}
+            </svg>
+          </button>
         </div>
       </div>
 
-      {/* Mobile slide-down menu */}
       {menuOpen && (
-        <div className="sm:hidden border-t border-gray-100">
-          <div className="px-2 py-2 space-y-0.5">
-            {navLinks.map(({ href, label }) => (
+        <div className="md:hidden border-t border-slate-100 bg-white">
+          <div className="px-3 py-2 space-y-0.5">
+            {LINKS.map(({ href, label, match }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                className={`block px-3 py-2.5 rounded-lg text-sm font-medium ${
+                  isActive(pathname, match) ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                }`}
               >
                 {label}
               </Link>
@@ -119,16 +101,12 @@ export function NavBar({ subtitle, backHref, navLinks = [], maxWidth = 'max-w-5x
               user ? (
                 <button
                   onClick={() => { signOut(); setMenuOpen(false); }}
-                  className="block w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                  className="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
                 >
                   Wyloguj się
                 </button>
               ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-                >
+                <Link href="/login" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
                   Zaloguj się
                 </Link>
               )

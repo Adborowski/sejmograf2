@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { firestore } from "@/lib/firebase/config";
 import { useAuth } from "@/contexts/AuthContext";
-import { NavBar } from "@/components/layout/NavBar";
 
 const ADMIN_EMAIL = "adborowski@gmail.com";
 
@@ -182,8 +181,7 @@ export default function BlastMonitorPage() {
 
   if (!user || user.email !== ADMIN_EMAIL) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar backHref="/" />
+      <div>
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <p className="text-red-700">Brak dostępu.</p>
@@ -196,8 +194,7 @@ export default function BlastMonitorPage() {
   // ── Loading data ────────────────────────────────────────────────────────────
   if (dataLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar backHref="/" subtitle="Blast Monitor" maxWidth="max-w-4xl" />
+      <div>
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-24">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
@@ -234,8 +231,7 @@ export default function BlastMonitorPage() {
   const bigEst = estimatedCompletion(bigTotal - bigEntries.length, avgPerDay);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar backHref="/" subtitle="Blast Monitor" maxWidth="max-w-4xl" />
+    <div>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* ── Small blast card ─────────────────────────────────────────── */}
