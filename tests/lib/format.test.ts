@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatNumber, formatPercent, formatDate, plural } from '@/lib/format';
+import { formatNumber, formatPercent, formatDate, plural, formatPointsDelta, formatDateRange } from '@/lib/format';
 
 // pl-PL groups with a (narrow) no-break space; normalise for comparison
 const plain = (s: string) => s.replace(/\s/g, ' ');
@@ -27,5 +27,21 @@ describe('format', () => {
       'głosowanie', 'głosowania', 'głosowania', 'głosowań', 'głosowań', 'głosowania', 'głosowań',
     ]);
     expect(p(1)).toBe('poseł');
+  });
+});
+
+describe('formatPointsDelta', () => {
+  it('shows signed percentage points with a Polish decimal comma', () => {
+    expect(formatPointsDelta(0.021)).toBe('+2,1 pp');
+    expect(formatPointsDelta(-0.004)).toBe('−0,4 pp');
+    expect(formatPointsDelta(0.0001)).toBe('±0,0 pp');
+  });
+});
+
+describe('formatDateRange', () => {
+  it('collapses same-month ranges and single days', () => {
+    expect(formatDateRange('2026-11-05', '2026-11-06')).toMatch(/^5–6 lis\S* 2026$/);
+    expect(formatDateRange('2026-11-05', '2026-11-05')).toBe(formatDate('2026-11-05'));
+    expect(formatDateRange('2026-10-30', '2026-11-02')).toBe(`${formatDate('2026-10-30')} – ${formatDate('2026-11-02')}`);
   });
 });

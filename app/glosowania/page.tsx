@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CARD_CLASS, EmptyState, ErrorState, Label, LoadingState, Page, PageHeader, SearchInput } from '@/components/ui';
 import { formatDate, formatNumber } from '@/lib/format';
 import { VotingDetail } from '@/components/votes/VotingDetail';
+import { VoteSplit } from '@/components/votes/VoteSplit';
 import { getVotingIndex } from '@/lib/firebase/firestore';
 import { searchVotings, VotingIndex } from '@/lib/votings';
 
@@ -77,7 +78,6 @@ function VotingsSearch() {
             {visible.map((r) => {
               const key = `${r.sitting}/${r.num}`;
               const isSelected = selected && selected.sitting === r.sitting && selected.num === r.num;
-              const cast = r.yes + r.no + r.abstain;
               return (
                 <li key={key}>
                   <button
@@ -90,19 +90,7 @@ function VotingsSearch() {
                     <p className="text-xs text-slate-500">{formatDate(r.date)} · posiedzenie {r.sitting}, nr {r.num}</p>
                     <p className="text-sm text-slate-900 mt-0.5 line-clamp-2">{r.topic || r.title}</p>
                     {r.topic && <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{r.title}</p>}
-                    {!r.onList && cast > 0 && (
-                      <div className="mt-2 flex items-center gap-2">
-                        {/* Split of votes cast: za / przeciw / wstrzymało się */}
-                        <span className="flex h-1.5 w-28 gap-[2px] overflow-hidden rounded-full" aria-hidden="true">
-                          <span className="bg-emerald-500" style={{ width: `${(r.yes / cast) * 100}%` }} />
-                          <span className="bg-rose-500" style={{ width: `${(r.no / cast) * 100}%` }} />
-                          <span className="bg-amber-400" style={{ width: `${(r.abstain / cast) * 100}%` }} />
-                        </span>
-                        <span className="text-[11px] text-slate-500 tabular">
-                          za {r.yes} · przeciw {r.no} · wstrz. {r.abstain}
-                        </span>
-                      </div>
-                    )}
+                    {!r.onList && <VoteSplit yes={r.yes} no={r.no} abstain={r.abstain} className="mt-2" />}
                   </button>
                 </li>
               );

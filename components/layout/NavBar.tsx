@@ -12,6 +12,7 @@ const LINKS = [
   { href: '/leaderboard', label: 'Ranking', match: ['/leaderboard'] },
   { href: '/search', label: 'Posłowie', match: ['/search', '/mep'] },
   { href: '/clubs', label: 'Kluby', match: ['/clubs', '/club'] },
+  { href: '/posiedzenie', label: 'Posiedzenie', match: ['/posiedzenie'] },
   { href: '/glosowania', label: 'Głosowania', match: ['/glosowania'] },
   { href: '/ministerstwa', label: 'Ministerstwa', match: ['/ministerstwa'] },
 ];

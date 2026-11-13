@@ -6,6 +6,7 @@ import { AttendanceChart } from "@/components/leaderboard/AttendanceChart";
 import { ClubCards } from "@/components/leaderboard/ClubCards";
 import { MepRankRow } from "@/components/leaderboard/MepRankRow";
 import { BiggestMovers } from "@/components/dashboard/BiggestMovers";
+import { LatestSittingCard } from "@/components/sitting/LatestSittingCard";
 import { RecentReviews } from "@/components/dashboard/RecentReviews";
 import { FEATURES } from "@/lib/features";
 import { useLatestSittingDate } from "@/hooks/useLatestSittingDate";
@@ -110,6 +111,8 @@ export default function HomePage() {
         <ErrorState message={error} />
       ) : (
         <div className="space-y-10">
+          <LatestSittingCard sittings={sittings} />
+
           <section>
             <div className="flex items-end justify-between gap-4 flex-wrap mb-4">
               <div>

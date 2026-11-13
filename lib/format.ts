@@ -22,3 +22,21 @@ export const plural = (n: number, one: string, few: string, many: string) => {
   const last = n % 10;
   return last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14) ? few : many;
 };
+
+/** Change in a 0–1 share as percentage points: 0.021 → "+2,1 pp", −0.004 → "−0,4 pp" */
+export const formatPointsDelta = (delta: number, digits = 1) => {
+  const points = new Intl.NumberFormat('pl-PL', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+    .format(Math.abs(delta * 100));
+  const isZero = Number(Math.abs(delta * 100).toFixed(digits)) === 0;
+  return `${isZero ? '±' : delta > 0 ? '+' : '−'}${points} pp`;
+};
+
+/** "2026-11-05", "2026-11-06" → "5–6 lis 2026"; across months/years falls back to two full dates */
+export const formatDateRange = (first: string, last: string) => {
+  if (first.slice(0, 10) === last.slice(0, 10)) return formatDate(first);
+  if (first.slice(0, 7) === last.slice(0, 7)) {
+    const day = new Date(`${first.slice(0, 10)}T12:00:00`).getDate();
+    return `${day}–${formatDate(last)}`;
+  }
+  return `${formatDate(first)} – ${formatDate(last)}`;
+};
