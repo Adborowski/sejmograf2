@@ -4,6 +4,7 @@ const path = require("path");
 const { Readable } = require("stream");
 const { finished } = require("stream/promises");
 const admin = require("firebase-admin");
+const { SEJM_API, fetchJson } = require("./lib/http.js");
 
 console.log(
   `${colors.yellow}${colors.bold}==== SEJM-SCRAPER BASIC ====${colors.reset}`,
@@ -36,10 +37,11 @@ const getUploadedPhotoIds = async () => {
 };
 
 const getMepsAndSaveToFile = async () => {
-  const res = await fetch("https://api.sejm.gov.pl/sejm/term10/MP", {
-    method: "GET",
-  });
-  const data = await res.json();
+  // fetchJson retries 5xx bursts and throws "HTTP 503 for …" instead of a JSON parse error
+  const data = await fetchJson(`${SEJM_API}/MP`);
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error(`Unexpected MP list response: ${JSON.stringify(data).slice(0, 200)}`);
+  }
   console.log(`${colors.green}✓ Fetched ${data.length} MEPs${colors.reset}`);
   fs.writeFileSync(path.resolve(__dirname, "meps.json"), JSON.stringify(data));
   console.log(`${colors.green}✓ Saved to meps.json${colors.reset}\n`);
@@ -60,6 +62,11 @@ const saveMepPhoto = async (mepId, uploadedMiniIds) => {
 
     if (res.status === 404) {
       return 'not-found';
+    }
+    // Never save an error page (e.g. 503 maintenance HTML) as a .jpeg: it would be
+    // uploaded and then skipped forever as "already exists"
+    if (!res.ok || !(res.headers.get("content-type") || "").startsWith("image/")) {
+      return 'error';
     }
 
     const fileStream = fs.createWriteStream(destination, { flags: "w" });
@@ -121,6 +128,11 @@ const saveMepPhotoBig = async (mepId, uploadedBigIds) => {
 
     if (res.status === 404) {
       return 'not-found';
+    }
+    // Never save an error page (e.g. 503 maintenance HTML) as a .jpeg: it would be
+    // uploaded and then skipped forever as "already exists"
+    if (!res.ok || !(res.headers.get("content-type") || "").startsWith("image/")) {
+      return 'error';
     }
 
     const fileStream = fs.createWriteStream(destination, { flags: "w" });
